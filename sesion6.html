@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>¿Quién quiere ser Caballero Medieval? — Al-Ándalus</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a14;
+  --panel:#10101e;
+  --panel2:#181828;
+  --border:#2a2a4a;
+  --gold:#d4a017;--gold2:#f5c842;--gold3:#fff0a0;
+  --blue:#1a3a6e;--blue2:#2255aa;--blue3:#4488ee;
+  --green:#0d5c2a;--green2:#1a9c4a;--green3:#40ee80;
+  --red:#6e1a1a;--red2:#b02020;--red3:#ff5555;
+  --text:#e8e0cc;--text2:#b0a880;
+  --arab:#8b3a00;--arab2:#d4600a;--arab3:#ffa040;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+body{
+  background:var(--bg);
+  font-family:'Crimson Text',serif;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(26,58,110,.25) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(139,58,0,.2) 0%, transparent 60%),
+    repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(255,255,255,.01) 40px,rgba(255,255,255,.01) 41px);
+  overflow-x:hidden;
+}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:16px 14px 40px;}
+.screen.active{display:flex;}
+
+/* INTRO */
+.intro-card{
+  max-width:560px;width:100%;
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border:2px solid var(--gold);
+  border-radius:16px;
+  padding:28px 22px;
+  margin-top:20px;
+  text-align:center;
+  box-shadow:0 0 40px rgba(212,160,23,.2), 0 8px 32px rgba(0,0,0,.6);
+  position:relative;overflow:hidden;
+}
+.intro-card::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    60deg,transparent,transparent 30px,
+    rgba(212,160,23,.03) 30px,rgba(212,160,23,.03) 31px
+  );pointer-events:none;
+}
+.game-logo{font-size:clamp(48px,12vw,72px);margin-bottom:8px;line-height:1;}
+.game-title{
+  font-family:'Cinzel',serif;
+  font-size:clamp(17px,4vw,26px);
+  font-weight:900;
+  background:linear-gradient(135deg,var(--gold),var(--gold3),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  line-height:1.2;margin-bottom:4px;
+}
+.game-subtitle{
+  font-family:'Cinzel',serif;font-size:clamp(11px,2.5vw,14px);
+  color:var(--arab3);letter-spacing:2px;margin-bottom:18px;
+}
+.prize-preview{
+  display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:14px 0;
+}
+.prize-chip{
+  padding:5px 10px;border-radius:20px;
+  font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:.5px;
+}
+.chip-safe{background:var(--green);color:var(--green3);border:1px solid var(--green2);}
+.chip-gold{background:var(--arab);color:var(--arab3);border:1px solid var(--arab2);}
+.chip-final{background:var(--blue);color:var(--blue3);border:1px solid var(--blue2);}
+
+.lifelines-preview{display:flex;justify-content:center;gap:12px;margin:14px 0;}
+.ll-item{text-align:center;}
+.ll-icon{font-size:26px;}
+.ll-label{font-family:'Cinzel',serif;font-size:9px;color:var(--text2);margin-top:3px;letter-spacing:.5px;}
+
+.name-input{
+  width:100%;padding:13px 16px;
+  background:rgba(255,255,255,.06);
+  border:2px solid var(--border);
+  border-radius:10px;
+  font-family:'Crimson Text',serif;font-size:17px;
+  color:var(--text);text-align:center;margin-bottom:6px;
+  transition:border-color .2s;
+}
+.name-input:focus{outline:none;border-color:var(--gold);}
+.name-input::placeholder{color:var(--text2);}
+
+.btn-start{
+  width:100%;padding:15px;margin-top:10px;
+  background:linear-gradient(135deg,var(--arab) 0%,var(--arab2) 50%,var(--arab) 100%);
+  border:2px solid var(--arab2);border-radius:10px;
+  font-family:'Cinzel',serif;font-size:clamp(14px,3vw,17px);font-weight:700;
+  color:var(--gold3);cursor:pointer;
+  transition:all .2s;box-shadow:0 4px 20px rgba(212,96,10,.3);
+  letter-spacing:.5px;
+}
+.btn-start:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px rgba(212,96,10,.5);}
+.btn-start:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* GAME SCREEN */
+.game-layout{width:100%;max-width:700px;display:flex;flex-direction:column;gap:12px;}
+
+/* PRIZE LADDER */
+.prize-ladder{
+  background:var(--panel);
+  border:1px solid var(--border);border-radius:12px;
+  padding:10px 8px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
+}
+.prize-rung{
+  padding:6px 4px;border-radius:6px;
+  text-align:center;
+  font-family:'Cinzel',serif;font-size:clamp(9px,2vw,11px);
+  font-weight:700;transition:all .3s;
+  border:1px solid transparent;
+}
+.prize-rung.active{
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:var(--bg);border-color:var(--gold3);
+  box-shadow:0 0 12px rgba(212,160,23,.5);
+  transform:scale(1.05);
+}
+.prize-rung.safe{background:var(--green);color:var(--green3);border-color:var(--green2);}
+.prize-rung.done{background:var(--panel2);color:var(--text2);}
+.prize-rung.normal{background:var(--panel2);color:var(--text2);}
+.rung-pts{font-size:clamp(9px,2vw,12px);}
+.rung-label{font-size:8px;opacity:.7;margin-top:1px;}
+
+/* QUESTION CARD */
+.question-card{
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border:2px solid var(--border);border-radius:14px;
+  padding:20px 18px;
+  box-shadow:0 4px 24px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;
+}
+.question-card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--arab2),var(--gold),var(--arab2));
+}
+.q-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:14px;
+}
+.q-num{font-family:'Cinzel',serif;font-size:12px;color:var(--arab3);letter-spacing:1px;}
+.q-pts{font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:var(--gold);}
+.q-text{
+  font-size:clamp(15px,3.5vw,19px);color:var(--text);
+  line-height:1.55;margin-bottom:18px;text-align:center;
+  font-weight:600;
+}
+
+/* OPCIONES */
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.opt-btn{
+  padding:13px 10px;
+  background:var(--panel2);
+  border:2px solid var(--border);
+  border-radius:10px;
+  font-family:'Crimson Text',serif;
+  font-size:clamp(13px,3vw,15px);
+  color:var(--text);
+  cursor:pointer;transition:all .2s;
+  text-align:left;line-height:1.35;
+  display:flex;align-items:flex-start;gap:8px;
+}
+.opt-letter{
+  font-family:'Cinzel',serif;font-size:13px;font-weight:700;
+  color:var(--gold);min-width:18px;margin-top:1px;
+}
+.opt-btn:hover:not(:disabled){
+  border-color:var(--gold);background:rgba(212,160,23,.08);
+  transform:translateX(3px);
+}
+.opt-btn.selected{border-color:var(--gold2);background:rgba(212,160,23,.15);}
+.opt-btn.correct{border-color:var(--green2);background:rgba(26,156,74,.2);color:var(--green3);}
+.opt-btn.wrong{border-color:var(--red2);background:rgba(176,32,32,.2);color:var(--red3);}
+.opt-btn:disabled{cursor:default;}
+
+/* LIFELINES BAR */
+.lifelines-bar{
+  display:flex;gap:8px;justify-content:center;
+  padding:10px;
+  background:var(--panel);
+  border:1px solid var(--border);border-radius:12px;
+}
+.ll-btn{
+  flex:1;max-width:100px;
+  padding:10px 6px;
+  background:var(--panel2);
+  border:2px solid var(--border);border-radius:10px;
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.ll-btn:hover:not(.used){border-color:var(--blue3);background:rgba(68,136,238,.1);}
+.ll-btn.used{opacity:.25;cursor:not-allowed;filter:grayscale(1);}
+.ll-btn .ll-icon{font-size:22px;}
+.ll-btn .ll-label{font-family:'Cinzel',serif;font-size:9px;color:var(--text2);margin-top:3px;letter-spacing:.5px;}
+
+/* FEEDBACK */
+.feedback-bar{
+  padding:12px 16px;border-radius:10px;
+  font-family:'Cinzel',serif;font-size:13px;font-weight:700;
+  text-align:center;display:none;margin-top:4px;
+}
+.feedback-bar.ok{background:rgba(26,156,74,.2);border:2px solid var(--green2);color:var(--green3);display:block;}
+.feedback-bar.ko{background:rgba(176,32,32,.2);border:2px solid var(--red2);color:var(--red3);display:block;}
+.feedback-bar.info{background:rgba(34,85,170,.2);border:2px solid var(--blue2);color:var(--blue3);display:block;}
+
+/* BOTÓN SIGUIENTE */
+.btn-next{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--blue2) 50%,var(--blue) 100%);
+  border:2px solid var(--blue2);border-radius:10px;
+  font-family:'Cinzel',serif;font-size:clamp(13px,3vw,16px);font-weight:700;
+  color:var(--text);cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(34,85,170,.3);margin-top:8px;
+  display:none;
+}
+.btn-next:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(34,85,170,.5);}
+
+/* COMODÍN 50:50 overlay */
+.overlay-5050{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:100;display:none;
+}
+.overlay-5050.show{display:flex;}
+.overlay-card{
+  background:var(--panel2);border:2px solid var(--gold);
+  border-radius:14px;padding:24px 20px;max-width:360px;width:90%;
+  text-align:center;
+}
+.overlay-title{font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:var(--gold);margin-bottom:12px;}
+.overlay-opts{display:flex;flex-direction:column;gap:8px;}
+
+/* FINAL */
+.final-card{
+  max-width:560px;width:100%;
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border:2px solid var(--gold);border-radius:16px;
+  padding:28px 22px;margin-top:20px;text-align:center;
+  box-shadow:0 0 40px rgba(212,160,23,.2);
+}
+.trophy{font-size:clamp(56px,14vw,80px);margin-bottom:8px;}
+.final-title{font-family:'Cinzel',serif;font-size:clamp(18px,4.5vw,28px);font-weight:900;color:var(--gold2);margin-bottom:6px;}
+.final-pts{font-family:'Cinzel',serif;font-size:clamp(40px,10vw,60px);font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.final-label{font-family:'Cinzel',serif;font-size:12px;color:var(--text2);letter-spacing:2px;margin-bottom:16px;}
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;}
+.stat-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 8px;}
+.stat-num{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);}
+.stat-label{font-family:'Cinzel',serif;font-size:9px;color:var(--text2);margin-top:3px;letter-spacing:.5px;}
+.cert-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin:12px 0;}
+.cert-box p{color:var(--text);font-size:14px;line-height:1.7;}
+.cert-name{font-family:'Cinzel',serif;font-size:16px;color:var(--gold);border-bottom:1px solid var(--border);margin:6px 20px;padding-bottom:6px;}
+.rank-badge{display:inline-block;padding:8px 20px;border-radius:20px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;margin:10px 0;}
+
+/* ANIMACIONES */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes pulse{0%,100%{box-shadow:0 0 12px rgba(212,160,23,.3)}50%{box-shadow:0 0 24px rgba(212,160,23,.7)}}
+@keyframes correct{0%{transform:scale(1)}50%{transform:scale(1.03)}100%{transform:scale(1)}}
+@keyframes confetti{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100px) rotate(720deg);opacity:0}}
+.fade-up{animation:fadeUp .35s ease forwards;}
+.pulse-active{animation:pulse 1.5s ease infinite;}
+.confetti-p{position:fixed;width:7px;height:7px;border-radius:2px;animation:confetti 1.4s ease forwards;pointer-events:none;z-index:999;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--panel);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════ INTRO -->
+<div class="screen active" id="s-intro">
+  <div class="intro-card fade-up">
+    <div class="game-logo">🕌</div>
+    <div class="game-title">¿Quién quiere ser<br>Caballero Medieval?</div>
+    <div class="game-subtitle">AL-ÁNDALUS · SESIÓN 6</div>
+
+    <div class="prize-preview">
+      <span class="prize-chip chip-safe">🛡️ Punto seguro: P5</span>
+      <span class="prize-chip chip-gold">⚔️ Punto seguro: P10</span>
+      <span class="prize-chip chip-final">🏆 Gran Premio: P12</span>
+    </div>
+
+    <div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;margin:12px 0;font-size:13px;color:var(--text2);line-height:1.6;">
+      12 preguntas sobre Al-Ándalus y la herencia árabe.<br>
+      Usa tus <strong style="color:var(--gold)">3 comodines</strong> con sabiduría.
+    </div>
+
+    <div class="lifelines-preview">
+      <div class="ll-item"><div class="ll-icon">✂️</div><div class="ll-label">50:50</div></div>
+      <div class="ll-item"><div class="ll-icon">👥</div><div class="ll-label">PÚBLICO</div></div>
+      <div class="ll-item"><div class="ll-icon">📞</div><div class="ll-label">LLAMADA</div></div>
+    </div>
+
+    <input class="name-input" id="player-name" placeholder="Escribe tu nombre..." oninput="checkName()">
+    <button class="btn-start" id="start-btn" onclick="startGame()" disabled>🕌 ¡Comenzar el viaje a Al-Ándalus!</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ JUEGO -->
+<div class="screen" id="s-game">
+  <div class="game-layout">
+
+    <!-- Escalera de premios -->
+    <div class="prize-ladder" id="prize-ladder"></div>
+
+    <!-- Pregunta -->
+    <div class="question-card" id="q-card">
+      <div class="q-header">
+        <span class="q-num" id="q-num">PREGUNTA 1</span>
+        <span class="q-pts" id="q-pts">100 pts</span>
+      </div>
+      <div class="q-text" id="q-text">—</div>
+      <div class="options-grid" id="opts-grid"></div>
+      <div class="feedback-bar" id="feedback"></div>
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()">➡️ Siguiente pregunta</button>
+    </div>
+
+    <!-- Comodines -->
+    <div class="lifelines-bar">
+      <div class="ll-btn" id="ll-5050" onclick="use5050()">
+        <div class="ll-icon">✂️</div>
+        <div class="ll-label">50:50</div>
+      </div>
+      <div class="ll-btn" id="ll-pub" onclick="usePublic()">
+        <div class="ll-icon">👥</div>
+        <div class="ll-label">PÚBLICO</div>
+      </div>
+      <div class="ll-btn" id="ll-call" onclick="useCall()">
+        <div class="ll-icon">📞</div>
+        <div class="ll-label">LLAMADA</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ FINAL -->
+<div class="screen" id="s-final">
+  <div class="final-card fade-up">
+    <div class="trophy" id="trophy">🏆</div>
+    <div class="final-title" id="final-title">¡Increíble!</div>
+    <div class="final-pts" id="final-pts">0</div>
+    <div class="final-label">PUNTOS CONSEGUIDOS</div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num" id="st-correct">0</div><div class="stat-label">CORRECTAS</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-q">0</div><div class="stat-label">PREGUNTAS</div></div>
+      <div class="stat-box"><div class="stat-num" id="st-ll">0</div><div class="stat-label">COMODINES USADOS</div></div>
+    </div>
+    <div class="rank-badge" id="rank-badge">—</div>
+    <div class="cert-box">
+      <p>Certificado de conocimiento entregado a</p>
+      <div class="cert-name" id="cert-name">—</div>
+      <p>por demostrar su saber sobre Al-Ándalus<br>y el legado árabe en la Península Ibérica.</p>
+    </div>
+    <button class="btn-start" onclick="restartGame()" style="margin-top:12px;">🔄 Jugar otra vez</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ OVERLAY COMODÍN PÚBLICO -->
+<div class="overlay-5050" id="overlay-pub">
+  <div class="overlay-card">
+    <div class="overlay-title">👥 El público opina...</div>
+    <div id="pub-bars" style="margin:14px 0;"></div>
+    <button class="btn-start" onclick="closeOverlay('overlay-pub')" style="margin-top:8px;padding:12px;">¡Gracias!</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ OVERLAY LLAMADA -->
+<div class="overlay-5050" id="overlay-call">
+  <div class="overlay-card">
+    <div class="overlay-title">📞 Llamada a un experto</div>
+    <div id="call-text" style="color:var(--text);font-size:15px;line-height:1.7;margin:14px 0;font-style:italic;"></div>
+    <button class="btn-start" onclick="closeOverlay('overlay-call')" style="margin-top:8px;padding:12px;">Colgar</button>
+  </div>
+</div>
+
+<script>
+// ── PREGUNTAS ────────────────────────────────────────────────────────────────
+const QUESTIONS = [
+  // Nivel 1-3: Fáciles (100-300 pts)
+  {
+    q: "¿En qué año llegaron los musulmanes a la Península Ibérica?",
+    opts: ["711","476","1492","1000"],
+    c: 0, pts: 100,
+    exp: "El año 711 los musulmanes cruzaron el Estrecho de Gibraltar y conquistaron casi toda la Península en pocos años."
+  },
+  {
+    q: "¿Cómo se llamaba la zona de la Península controlada por los musulmanes?",
+    opts: ["Hispania","Al-Ándalus","Reconquista","Medina"],
+    c: 1, pts: 200,
+    exp: "Al-Ándalus era el nombre árabe para los territorios musulmanes en la Península Ibérica."
+  },
+  {
+    q: "¿Cuál fue la capital más importante de Al-Ándalus?",
+    opts: ["Toledo","Sevilla","Córdoba","Zaragoza"],
+    c: 2, pts: 300,
+    exp: "Córdoba fue la capital del Califato de Córdoba y llegó a ser la ciudad más culta de Europa occidental."
+  },
+  // Nivel 4-5: Medios (500-1000 pts)
+  {
+    q: "¿Qué es el 'zoco'?",
+    opts: ["Un tipo de castillo árabe","El mercado musulmán","La mezquita principal","Un baño público"],
+    c: 1, pts: 500,
+    exp: "El zoco era el mercado donde los comerciantes vendían especias, telas, cerámica y todo tipo de productos."
+  },
+  {
+    q: "¿Cuántos libros tenía la biblioteca de Córdoba en el siglo X?",
+    opts: ["400 libros","4.000 libros","40.000 libros","400.000 libros"],
+    c: 3, pts: 1000,
+    exp: "¡La biblioteca de Córdoba tenía 400.000 libros! La más grande de Europa cristiana apenas llegaba a 400."
+  },
+  // PUNTO SEGURO 5 ↑
+  {
+    q: "¿Cómo se llama el baño público árabe?",
+    opts: ["Alcázar","Hammam","Madrasa","Zoco"],
+    c: 1, pts: 2000,
+    exp: "El hammam era el baño público. En árabe significa 'el que calienta'. Era un lugar de higiene y reunión social."
+  },
+  {
+    q: "¿Qué significa 'madrasa'?",
+    opts: ["Palacio del rey","Mercado cubierto","Escuela o lugar de estudio","Torre de vigilancia"],
+    c: 2, pts: 4000,
+    exp: "La madrasa era la escuela árabe donde se estudiaban el Corán, las matemáticas, la astronomía y la filosofía."
+  },
+  {
+    q: "La palabra 'almohada' viene del árabe 'al-mukhadda'. ¿Qué significa?",
+    opts: ["El cojín","La tela suave","El descanso","El colchón"],
+    c: 0, pts: 8000,
+    exp: "¡Correcto! Al-mukhadda significa 'el cojín'. Es uno de los cientos de palabras españolas de origen árabe."
+  },
+  {
+    q: "¿Cuándo comenzó la Reconquista cristiana?",
+    opts: ["El año 711","El año 718","El año 1000","El año 1492"],
+    c: 1, pts: 16000,
+    exp: "La Reconquista comenzó en el 718 en Covadonga (Asturias), cuando el rey Pelayo venció a los musulmanes."
+  },
+  // PUNTO SEGURO 10 ↑
+  {
+    q: "¿Cuántos años duró aproximadamente la Reconquista?",
+    opts: ["200 años","400 años","600 años","800 años"],
+    c: 3, pts: 32000,
+    exp: "¡La Reconquista duró casi 800 años! Del 718 al 1492. Es uno de los procesos históricos más largos de Europa."
+  },
+  {
+    q: "¿Qué palabra de origen árabe usamos para referirnos a los números 0, 1, 2, 3...?",
+    opts: ["Números romanos","Números naturales","Cifras o dígitos","Números griegos"],
+    c: 2, pts: 64000,
+    exp: "La palabra 'cifra' viene del árabe 'sifr' que significa 'vacío' o 'cero'. Los árabes inventaron el cero."
+  },
+  {
+    q: "¿Qué es el 'alcázar'?",
+    opts: ["El mercado de la medina","El palacio o fortaleza del gobernador","La escuela coránica","El puente sobre el río"],
+    c: 1, pts: 125000,
+    exp: "El alcázar (del árabe 'al-qasr') era el palacio-fortaleza del gobernador. El Alcázar de Sevilla es el más famoso de España."
+  },
+];
+
+// ── ESTADO ───────────────────────────────────────────────────────────────────
+let playerName='', qIdx=0, score=0, safeScore=0;
+let correct=0, llUsed=0;
+let ll5050Used=false, llPubUsed=false, llCallUsed=false;
+let answered=false;
+
+const SAFE_POINTS=[5,10]; // índices 0-based de puntos seguros (pregunta 5 y 10)
+const PRIZE_LABELS=['100','200','300','500','1K','2K','4K','8K','16K','32K','64K','125K'];
+
+// Expertos para la llamada
+const EXPERTS=[
+  "Hmm... creo que es la opción {X}, pero no estoy del todo seguro. Algo me suena a eso...",
+  "¡Estoy bastante seguro de que es {X}! Lo estudiamos el año pasado.",
+  "Mira, yo diría que es {X}. ¿Tiene sentido con lo que hemos visto en la ficha?",
+  "No lo sé con certeza, pero entre {X} y otra opción... yo elegiría {X}.",
+];
+
+// ── FUNCIONES ────────────────────────────────────────────────────────────────
+function checkName(){
+  document.getElementById('start-btn').disabled = document.getElementById('player-name').value.trim().length < 2;
+}
+
+function startGame(){
+  playerName = document.getElementById('player-name').value.trim();
+  buildLadder();
+  showScreen('s-game');
+  renderQuestion();
+}
+
+function buildLadder(){
+  const ladder = document.getElementById('prize-ladder');
+  ladder.innerHTML = '';
+  PRIZE_LABELS.forEach((lbl,i)=>{
+    const d = document.createElement('div');
+    d.className = 'prize-rung ' + (i===0?'active':'normal');
+    d.id = 'rung-'+i;
+    d.innerHTML = `<div class="rung-pts">${lbl}</div><div class="rung-label">${SAFE_POINTS.includes(i)?'🛡️':''}</div>`;
+    ladder.appendChild(d);
+  });
+}
+
+function updateLadder(){
+  PRIZE_LABELS.forEach((_,i)=>{
+    const r = document.getElementById('rung-'+i);
+    if(!r) return;
+    r.className = 'prize-rung ';
+    if(i < qIdx) r.className += SAFE_POINTS.includes(i)?'safe':'done';
+    else if(i === qIdx) r.className += 'active pulse-active';
+    else r.className += 'normal';
+  });
+}
+
+function renderQuestion(){
+  if(qIdx >= QUESTIONS.length){ endGame(); return; }
+  answered = false;
+  const q = QUESTIONS[qIdx];
+  document.getElementById('q-num').textContent = `PREGUNTA ${qIdx+1} DE ${QUESTIONS.length}`;
+  document.getElementById('q-pts').textContent = PRIZE_LABELS[qIdx]+' pts';
+  document.getElementById('q-text').textContent = q.q;
+  document.getElementById('feedback').className = 'feedback-bar';
+  document.getElementById('btn-next').style.display = 'none';
+
+  const grid = document.getElementById('opts-grid');
+  grid.innerHTML = '';
+  const letters = ['A','B','C','D'];
+  q.opts.forEach((opt,i)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn';
+    btn.id = 'opt-'+i;
+    btn.innerHTML = `<span class="opt-letter">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    grid.appendChild(btn);
+  });
+  updateLadder();
+  document.getElementById('q-card').classList.add('fade-up');
+  setTimeout(()=>document.getElementById('q-card').classList.remove('fade-up'),400);
+}
+
+function selectAnswer(idx){
+  if(answered) return;
+  answered = true;
+  const q = QUESTIONS[qIdx];
+  const btns = document.querySelectorAll('.opt-btn');
+  btns.forEach(b=>b.disabled=true);
+  btns[idx].classList.add('selected');
+
+  setTimeout(()=>{
+    btns[idx].classList.remove('selected');
+    btns[q.c].classList.add('correct');
+    if(idx !== q.c){
+      btns[idx].classList.add('wrong');
+      // Game over
+      const fb = document.getElementById('feedback');
+      fb.className='feedback-bar ko';
+      fb.innerHTML = `❌ Incorrecto. La respuesta era <strong>${['A','B','C','D'][q.c]}</strong>. ${q.exp}`;
+      score = safeScore;
+      setTimeout(()=>endGame(), 3500);
+      return;
+    }
+    // Correcto
+    score = q.pts; correct++;
+    if(SAFE_POINTS.includes(qIdx)) safeScore = q.pts;
+    const fb = document.getElementById('feedback');
+    fb.className='feedback-bar ok';
+    fb.textContent = `✅ ¡Correcto! ${q.exp}`;
+    const btnNext = document.getElementById('btn-next');
+    btnNext.style.display='block';
+    btnNext.textContent = qIdx===QUESTIONS.length-1 ? '🏆 ¡Ver resultado final!' : '➡️ Siguiente pregunta';
+  }, 600);
+}
+
+function nextQuestion(){
+  qIdx++;
+  if(qIdx >= QUESTIONS.length){ endGame(); return; }
+  renderQuestion();
+}
+
+// ── COMODINES ────────────────────────────────────────────────────────────────
+function use5050(){
+  if(ll5050Used || answered) return;
+  ll5050Used=true; llUsed++;
+  document.getElementById('ll-5050').classList.add('used');
+  const q = QUESTIONS[qIdx];
+  // Eliminar 2 incorrectas
+  let removed=0;
+  for(let i=0;i<4;i++){
+    if(i!==q.c && removed<2){
+      const btn=document.getElementById('opt-'+i);
+      btn.style.opacity='.15';btn.disabled=true;
+      removed++;
+    }
+  }
+  showFeedbackInfo('✂️ Se han eliminado dos respuestas incorrectas.');
+}
+
+function usePublic(){
+  if(llPubUsed || answered) return;
+  llPubUsed=true; llUsed++;
+  document.getElementById('ll-pub').classList.add('used');
+  const q = QUESTIONS[qIdx];
+  // Generar porcentajes realistas: la correcta tiene más %
+  const pcts=[0,0,0,0];
+  pcts[q.c]=Math.floor(55+Math.random()*25); // 55-80%
+  let remaining=100-pcts[q.c];
+  const others=[0,1,2,3].filter(i=>i!==q.c);
+  others.forEach((i,j)=>{
+    if(j===others.length-1){ pcts[i]=remaining; }
+    else{ const v=Math.floor(Math.random()*remaining*.6); pcts[i]=v; remaining-=v; }
+  });
+  const letters=['A','B','C','D'];
+  const bars=document.getElementById('pub-bars');
+  bars.innerHTML=pcts.map((p,i)=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-family:'Cinzel',serif;font-size:12px;color:var(--text2);margin-bottom:4px;">
+        <span>${letters[i]}. ${q.opts[i].substring(0,28)}${q.opts[i].length>28?'...':''}</span>
+        <span style="color:var(--gold);font-weight:700;">${p}%</span>
+      </div>
+      <div style="background:var(--panel2);border-radius:4px;height:16px;overflow:hidden;">
+        <div style="width:${p}%;height:100%;background:linear-gradient(90deg,var(--blue2),var(--blue3));border-radius:4px;transition:width .8s ease;"></div>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('overlay-pub').classList.add('show');
+}
+
+function useCall(){
+  if(llCallUsed || answered) return;
+  llCallUsed=true; llUsed++;
+  document.getElementById('ll-call').classList.add('used');
+  const q = QUESTIONS[qIdx];
+  const letters=['A','B','C','D'];
+  const expert=EXPERTS[Math.floor(Math.random()*EXPERTS.length)].replace(/\{X\}/g, letters[q.c]+'. '+q.opts[q.c]);
+  document.getElementById('call-text').innerHTML=`
+    <strong style="color:var(--gold);">📱 Tu amigo experto dice:</strong><br><br>
+    "${expert}"
+  `;
+  document.getElementById('overlay-call').classList.add('show');
+}
+
+function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
+
+function showFeedbackInfo(msg){
+  const fb=document.getElementById('feedback');
+  fb.className='feedback-bar info';fb.textContent=msg;
+  setTimeout(()=>{if(!answered)fb.className='feedback-bar';},2500);
+}
+
+// ── FINAL ────────────────────────────────────────────────────────────────────
+function endGame(){
+  document.getElementById('final-pts').textContent = score.toLocaleString();
+  document.getElementById('cert-name').textContent = playerName;
+  document.getElementById('st-correct').textContent = correct;
+  document.getElementById('st-q').textContent = qIdx+(answered&&correct>0&&qIdx<QUESTIONS.length?1:0);
+  document.getElementById('st-ll').textContent = llUsed;
+
+  // Trofeo y rango
+  let trophy='🏆', title='', rank='', rankColor='';
+  if(score>=64000){
+    trophy='🌟';title='¡Eres un sabio de Al-Ándalus!';
+    rank='GRAN ERUDITO DE CÓRDOBA';rankColor='background:linear-gradient(135deg,var(--arab),var(--arab2));color:var(--gold3);border:2px solid var(--arab2);';
+    launchConfetti();
+  } else if(score>=16000){
+    trophy='⚔️';title='¡Excelente, noble viajero!';
+    rank='CABALLERO MEDIEVAL';rankColor='background:var(--blue);color:var(--blue3);border:2px solid var(--blue2);';
+  } else if(score>=1000){
+    trophy='🛡️';title='¡Buen trabajo, escudero!';
+    rank='ESCUDERO APRENDIZ';rankColor='background:var(--green);color:var(--green3);border:2px solid var(--green2);';
+  } else {
+    trophy='📜';title='Sigue estudiando, viajero';
+    rank='PEREGRINO MEDIEVAL';rankColor='background:var(--panel2);color:var(--text2);border:2px solid var(--border);';
+  }
+
+  document.getElementById('trophy').textContent=trophy;
+  document.getElementById('final-title').textContent=title;
+  const badge=document.getElementById('rank-badge');
+  badge.textContent=rank;badge.style.cssText=rankColor;
+
+  showScreen('s-final');
+}
+
+function launchConfetti(){
+  const colors=['#d4a017','#1a9c4a','#2255aa','#d4600a','#f5c842'];
+  for(let i=0;i<60;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');p.className='confetti-p';
+      p.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${colors[Math.floor(Math.random()*5)]};transform:rotate(${Math.random()*360}deg);animation-delay:${Math.random()*.7}s;`;
+      document.body.appendChild(p);setTimeout(()=>p.remove(),2500);
+    },i*20);
+  }
+}
+
+function restartGame(){
+  qIdx=0;score=0;safeScore=0;correct=0;llUsed=0;
+  ll5050Used=false;llPubUsed=false;llCallUsed=false;answered=false;
+  ['ll-5050','ll-pub','ll-call'].forEach(id=>document.getElementById(id).classList.remove('used'));
+  showScreen('s-intro');
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
