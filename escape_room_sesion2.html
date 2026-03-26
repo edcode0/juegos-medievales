@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Escape del Castillo Medieval</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --stone:#2c2416; --stone-mid:#3d3020; --stone-light:#5c4a2a;
+  --gold:#c9a227; --gold-bright:#f0c040; --gold-dark:#7a5c0a;
+  --parchment:#f2e8c9; --parchment-dark:#d4c48a;
+  --blood:#8b1a1a; --emerald:#1a5c2a; --sky:#1a3a5c;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{
+  background:var(--stone);
+  font-family:'Crimson Text',serif;
+  min-height:100vh; overflow-x:hidden;
+  background-image:
+    repeating-linear-gradient(0deg,transparent,transparent 60px,rgba(0,0,0,.08) 60px,rgba(0,0,0,.08) 62px),
+    repeating-linear-gradient(90deg,transparent,transparent 80px,rgba(0,0,0,.06) 80px,rgba(0,0,0,.06) 82px);
+}
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:16px 14px 40px;}
+.screen.active{display:flex;}
+
+/* HEADER */
+.game-header{width:100%;max-width:620px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.progress-bar{flex:1;height:10px;background:var(--stone-mid);border-radius:5px;margin:0 10px;border:1px solid var(--stone-light);overflow:hidden;}
+.progress-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--gold-dark),var(--gold-bright));transition:width .6s ease;}
+.step-label{font-family:'Cinzel',serif;font-size:11px;color:var(--gold);letter-spacing:1px;white-space:nowrap;}
+
+/* CARD */
+.card{
+  background:linear-gradient(160deg,#f5ead0 0%,var(--parchment) 60%,#e8d5a0 100%);
+  border-radius:12px;border:3px solid var(--gold-dark);
+  box-shadow:0 8px 32px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.3);
+  padding:24px 20px;width:100%;max-width:620px;position:relative;overflow:hidden;
+}
+.card::before{content:'';position:absolute;inset:6px;border:1px solid rgba(201,162,39,.3);border-radius:8px;pointer-events:none;}
+
+/* TIPOS */
+.game-title{font-family:'Cinzel',serif;font-size:clamp(20px,5vw,30px);font-weight:900;color:var(--stone);text-align:center;text-shadow:1px 1px 0 var(--gold);line-height:1.2;margin-bottom:6px;}
+.puzzle-title{font-family:'Cinzel',serif;font-size:clamp(15px,3.5vw,21px);font-weight:700;color:var(--stone);text-align:center;margin-bottom:4px;}
+.puzzle-num{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-dark);text-align:center;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px;}
+.narrative{font-size:clamp(13px,3vw,15px);color:#3a2a0a;text-align:center;line-height:1.6;margin-bottom:16px;font-style:italic;}
+.big-emoji{font-size:clamp(44px,11vw,68px);text-align:center;margin:10px 0;line-height:1;}
+.divider{text-align:center;color:var(--gold-dark);font-size:16px;margin:12px 0;letter-spacing:8px;}
+.tip{background:rgba(201,162,39,.15);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 13px;margin-bottom:14px;font-size:clamp(12px,2.8vw,14px);color:#3a2a0a;font-style:italic;}
+
+/* BOTONES */
+.btn-main{display:block;width:100%;padding:13px 20px;background:linear-gradient(135deg,var(--gold-dark) 0%,var(--gold) 50%,var(--gold-dark) 100%);border:2px solid var(--gold-dark);border-radius:8px;font-family:'Cinzel',serif;font-size:clamp(13px,3vw,16px);font-weight:700;color:var(--stone);cursor:pointer;text-align:center;margin-top:16px;transition:all .2s;box-shadow:0 4px 12px rgba(0,0,0,.3);letter-spacing:.5px;}
+.btn-main:hover,.btn-main:active{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.4);}
+.btn-main:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* FEEDBACK */
+.feedback{text-align:center;padding:10px 14px;border-radius:8px;margin-top:12px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;display:none;}
+.feedback.ok{background:#d4edda;color:var(--emerald);border:2px solid var(--emerald);display:block;}
+.feedback.ko{background:#f8d7da;color:var(--blood);border:2px solid var(--blood);display:block;}
+
+/* ── P1: PIRÁMIDE ────────────────────────────────────── */
+.pyramid-zone{background:rgba(0,0,0,.06);border:2px dashed var(--parchment-dark);border-radius:10px;padding:14px;margin-bottom:14px;}
+.pyramid-slot{border:2px dashed var(--gold-dark);border-radius:8px;min-height:48px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;transition:all .2s;background:rgba(255,255,255,.3);position:relative;}
+.pyramid-slot.drag-over{background:rgba(201,162,39,.25);border-color:var(--gold);}
+.slot-label{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--gold-dark);font-family:'Cinzel',serif;opacity:.6;}
+.pyramid-slot[data-level="1"]{width:40%;margin:0 auto 8px;}
+.pyramid-slot[data-level="2"]{width:60%;margin:0 auto 8px;}
+.pyramid-slot[data-level="3"]{width:80%;margin:0 auto 8px;}
+.pyramid-slot[data-level="4"]{width:100%;}
+.drag-bank{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+.drag-card{padding:10px 14px;background:var(--stone);border:2px solid var(--gold-dark);border-radius:8px;font-family:'Cinzel',serif;font-size:clamp(11px,2.5vw,13px);font-weight:700;color:var(--gold);cursor:grab;transition:all .2s;user-select:none;touch-action:none;}
+.drag-card:active{cursor:grabbing;transform:scale(1.06);}
+.drag-card.placed{opacity:.3;pointer-events:none;}
+.placed-card{padding:7px 10px;background:var(--stone);border-radius:6px;font-family:'Cinzel',serif;font-size:clamp(11px,2.5vw,13px);font-weight:700;color:var(--gold);text-align:center;width:calc(100% - 36px);}
+
+/* ── P2: MATCHING ────────────────────────────────────── */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.match-col{display:flex;flex-direction:column;gap:7px;}
+.match-item{padding:9px 11px;border-radius:8px;font-size:clamp(11px,2.6vw,13px);cursor:pointer;transition:all .2s;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;line-height:1.3;font-weight:600;}
+.match-left{background:var(--stone);border:2px solid var(--gold-dark);color:var(--gold);font-family:'Cinzel',serif;font-size:clamp(10px,2.4vw,12px);}
+.match-right{background:rgba(0,0,0,.06);border:2px solid var(--parchment-dark);color:#3a2a0a;font-style:italic;font-size:clamp(10px,2.4vw,12px);}
+.match-item.selected{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,162,39,.4);transform:scale(1.03);}
+.match-item.matched-ok{border-color:var(--emerald);background:#d4edda;color:var(--emerald);cursor:default;}
+.match-item.matched-ko{border-color:var(--blood);background:#f8d7da;color:var(--blood);}
+.match-score{text-align:center;font-family:'Cinzel',serif;font-size:12px;color:var(--gold-dark);margin-bottom:8px;}
+
+/* ── P3: PREGUNTAS ───────────────────────────────────── */
+.q-block{background:var(--stone);border:2px solid var(--gold-dark);border-radius:10px;padding:15px;margin-bottom:12px;}
+.q-text{color:var(--parchment);font-size:clamp(12px,2.8vw,15px);line-height:1.7;margin-bottom:12px;}
+.q-text strong{color:var(--gold-bright);}
+.q-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.q-btn{padding:12px 8px;background:var(--stone-mid);border:2px solid var(--stone-light);border-radius:8px;font-family:'Cinzel',serif;font-size:clamp(11px,2.6vw,13px);font-weight:700;color:var(--parchment);cursor:pointer;transition:all .2s;text-align:center;line-height:1.3;}
+.q-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);background:rgba(201,162,39,.1);}
+.q-btn.correct{background:#d4edda;border-color:var(--emerald);color:var(--emerald);}
+.q-btn.wrong{background:#f8d7da;border-color:var(--blood);color:var(--blood);}
+.q-btn:disabled{cursor:default;}
+.q-progress{font-family:'Cinzel',serif;font-size:12px;color:var(--gold-dark);text-align:center;margin-bottom:10px;}
+
+/* ── P4: FEUDO ────────────────────────────────────────── */
+.feudo-header{background:var(--stone);border:2px solid var(--gold);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;}
+.feudo-stat{display:inline-flex;align-items:center;gap:6px;margin:4px 8px;}
+.feudo-stat-label{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-dark);}
+.feudo-stat-val{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--gold-bright);}
+.feudo-bar{display:flex;gap:3px;margin-top:3px;}
+.feudo-bar-seg{width:18px;height:10px;border-radius:2px;background:var(--stone-light);transition:background .4s;}
+.feudo-bar-seg.filled{background:var(--gold);}
+
+.scenario-box{background:linear-gradient(135deg,rgba(0,0,0,.08),rgba(0,0,0,.04));border:1px solid var(--parchment-dark);border-radius:10px;padding:16px;margin-bottom:14px;}
+.scenario-icon{font-size:36px;text-align:center;margin-bottom:8px;}
+.scenario-text{font-size:clamp(13px,3vw,15px);color:#3a2a0a;line-height:1.65;text-align:center;margin-bottom:14px;}
+.scenario-choices{display:flex;flex-direction:column;gap:8px;}
+.choice-btn{padding:12px 16px;background:var(--stone);border:2px solid var(--gold-dark);border-radius:8px;font-size:clamp(12px,2.8vw,14px);color:var(--parchment);cursor:pointer;transition:all .2s;text-align:left;line-height:1.4;font-family:'Crimson Text',serif;}
+.choice-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);transform:translateX(4px);}
+.choice-btn.chosen-good{background:#d4edda;border-color:var(--emerald);color:var(--emerald);}
+.choice-btn.chosen-bad{background:#f8d7da;border-color:var(--blood);color:var(--blood);}
+.choice-btn:disabled{cursor:default;opacity:.6;}
+.consequence-box{background:rgba(201,162,39,.15);border:1px solid var(--gold-dark);border-radius:8px;padding:12px;margin-top:10px;font-size:clamp(12px,2.8vw,14px);color:#3a2a0a;line-height:1.5;display:none;}
+.consequence-box.show{display:block;}
+.scenario-counter{font-family:'Cinzel',serif;font-size:11px;color:var(--gold-dark);text-align:center;letter-spacing:1px;margin-bottom:10px;}
+
+/* FINAL */
+.stars{font-size:38px;text-align:center;letter-spacing:8px;margin:14px 0;}
+.score-display{background:var(--stone);border:3px solid var(--gold);border-radius:12px;padding:18px;text-align:center;margin:14px 0;}
+.score-num{font-family:'Cinzel',serif;font-size:clamp(34px,8vw,52px);font-weight:900;color:var(--gold-bright);line-height:1;}
+.score-label{font-family:'Cinzel',serif;font-size:12px;color:var(--parchment);letter-spacing:2px;}
+.breakdown{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0;}
+.breakdown-item{background:var(--stone-mid);border:1px solid var(--stone-light);border-radius:8px;padding:10px 6px;text-align:center;}
+.breakdown-num{font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);}
+.breakdown-label{font-family:'Cinzel',serif;font-size:9px;color:var(--gold-dark);margin-top:3px;letter-spacing:.5px;}
+.certificate{background:linear-gradient(135deg,var(--stone-mid),var(--stone));border:2px solid var(--gold-dark);border-radius:10px;padding:16px;margin:12px 0;text-align:center;}
+.certificate p{color:var(--parchment);font-size:14px;line-height:1.6;}
+.cert-name{font-family:'Cinzel',serif;font-size:15px;color:var(--gold);border-bottom:1px solid var(--gold-dark);margin:8px 24px;padding-bottom:6px;letter-spacing:1px;}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes confetti{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(90px) rotate(720deg);opacity:0}}
+.animate-in{animation:fadeIn .4s ease forwards;}
+.shake{animation:shake .3s ease;}
+.confetti-piece{position:fixed;width:8px;height:8px;border-radius:2px;animation:confetti 1.4s ease forwards;pointer-events:none;z-index:999;}
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div class="screen active" id="s-intro">
+  <div class="card animate-in" style="margin-top:20px;text-align:center;">
+    <div style="font-size:clamp(40px,10vw,60px);margin-bottom:6px;">🏰</div>
+    <div class="game-title">¡Escapa del<br>Castillo Medieval!</div>
+    <div class="divider">✦ ✦ ✦</div>
+    <p class="narrative">El rey te ha encerrado en la torre del homenaje.<br>Para salir debes demostrar que conoces el sistema feudal.<br><strong>4 pruebas · ~10 minutos · ¡Buena suerte!</strong></p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;">
+      <div style="text-align:center;"><div style="font-size:24px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-dark);margin-top:3px;">PIRÁMIDE</div></div>
+      <div style="text-align:center;"><div style="font-size:24px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-dark);margin-top:3px;">FUNCIONES</div></div>
+      <div style="text-align:center;"><div style="font-size:24px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-dark);margin-top:3px;">PREGUNTAS</div></div>
+      <div style="text-align:center;"><div style="font-size:24px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold-dark);margin-top:3px;">FEUDO</div></div>
+    </div>
+    <div class="divider">✦ ✦ ✦</div>
+    <input type="text" id="player-name" placeholder="Escribe tu nombre aquí..."
+      style="width:100%;padding:12px 16px;border:2px solid var(--gold-dark);border-radius:8px;background:rgba(255,255,255,.6);font-family:'Crimson Text',serif;font-size:16px;color:var(--stone);text-align:center;margin-bottom:4px;"
+      oninput="checkName()">
+    <button class="btn-main" id="start-btn" onclick="startGame()" disabled>⚔️ ¡Comenzar la aventura!</button>
+  </div>
+</div>
+
+<!-- PUZZLE 1: PIRÁMIDE -->
+<div class="screen" id="s-p1">
+  <div class="game-header" style="max-width:620px;width:100%;">
+    <span class="step-label">1/4</span>
+    <div class="progress-bar"><div class="progress-fill" id="prog1" style="width:0%"></div></div>
+    <span class="step-label" id="sc1">0 pts</span>
+  </div>
+  <div class="card animate-in">
+    <div class="puzzle-num">🔐 PRUEBA 1 DE 4 — LA PIRÁMIDE FEUDAL</div>
+    <div class="puzzle-title">¡Construye la pirámide!</div>
+    <div class="tip">📌 Arrastra cada estamento al nivel correcto. El más poderoso va arriba.</div>
+    <div class="pyramid-zone">
+      <div class="pyramid-slot" data-level="1" data-answer="Rey" ondragover="allowDrop(event)" ondrop="dropCard(event,this)" ontouchend="touchDrop(event,this)"><div class="slot-label">Nivel 1</div></div>
+      <div class="pyramid-slot" data-level="2" data-answer="Nobleza" ondragover="allowDrop(event)" ondrop="dropCard(event,this)" ontouchend="touchDrop(event,this)"><div class="slot-label">Nivel 2</div></div>
+      <div class="pyramid-slot" data-level="3" data-answer="Clero" ondragover="allowDrop(event)" ondrop="dropCard(event,this)" ontouchend="touchDrop(event,this)"><div class="slot-label">Nivel 3</div></div>
+      <div class="pyramid-slot" data-level="4" data-answer="Campesinos" ondragover="allowDrop(event)" ondrop="dropCard(event,this)" ontouchend="touchDrop(event,this)"><div class="slot-label">Nivel 4</div></div>
+    </div>
+    <div class="drag-bank">
+      <div class="drag-card" id="dc-campesinos" draggable="true" ondragstart="dragStart(event,'Campesinos')" ontouchstart="touchStart(event,'Campesinos')" ontouchmove="touchMove(event)">👨‍🌾 Campesinos</div>
+      <div class="drag-card" id="dc-clero" draggable="true" ondragstart="dragStart(event,'Clero')" ontouchstart="touchStart(event,'Clero')" ontouchmove="touchMove(event)">✝️ Clero</div>
+      <div class="drag-card" id="dc-rey" draggable="true" ondragstart="dragStart(event,'Rey')" ontouchstart="touchStart(event,'Rey')" ontouchmove="touchMove(event)">👑 Rey</div>
+      <div class="drag-card" id="dc-nobleza" draggable="true" ondragstart="dragStart(event,'Nobleza')" ontouchstart="touchStart(event,'Nobleza')" ontouchmove="touchMove(event)">⚔️ Nobleza</div>
+    </div>
+    <div class="feedback" id="fb-p1"></div>
+    <button class="btn-main" id="btn-p1" onclick="checkP1()" disabled>🔍 Comprobar pirámide</button>
+  </div>
+</div>
+
+<!-- PUZZLE 2: MATCHING -->
+<div class="screen" id="s-p2">
+  <div class="game-header" style="max-width:620px;width:100%;">
+    <span class="step-label">2/4</span>
+    <div class="progress-bar"><div class="progress-fill" id="prog2" style="width:25%"></div></div>
+    <span class="step-label" id="sc2">0 pts</span>
+  </div>
+  <div class="card animate-in">
+    <div class="puzzle-num">🔐 PRUEBA 2 DE 4 — FUNCIONES Y PRIVILEGIOS</div>
+    <div class="puzzle-title">¿Quién hace qué?</div>
+    <div class="tip">📌 Toca un estamento de la izquierda y luego su función de la derecha.</div>
+    <div class="match-score" id="match-score">Emparejados: 0 / 6</div>
+    <div class="match-grid">
+      <div class="match-col" id="left-col">
+        <div class="match-item match-left" data-id="rey" onclick="selectLeft(this)">👑 Rey</div>
+        <div class="match-item match-left" data-id="nobleza" onclick="selectLeft(this)">⚔️ Nobleza</div>
+        <div class="match-item match-left" data-id="clero" onclick="selectLeft(this)">✝️ Clero</div>
+        <div class="match-item match-left" data-id="campesinos" onclick="selectLeft(this)">👨‍🌾 Campesinos</div>
+        <div class="match-item match-left" data-id="escudero" onclick="selectLeft(this)">🛡️ Escudero</div>
+        <div class="match-item match-left" data-id="siervo" onclick="selectLeft(this)">⛓️ Siervo</div>
+      </div>
+      <div class="match-col" id="right-col">
+        <div class="match-item match-right" data-match="campesinos" onclick="selectRight(this)">Trabajaba la tierra y pagaba el diezmo</div>
+        <div class="match-item match-right" data-match="rey" onclick="selectRight(this)">Gobernaba y hacía las leyes del reino</div>
+        <div class="match-item match-right" data-match="siervo" onclick="selectRight(this)">No podía abandonar las tierras del señor</div>
+        <div class="match-item match-right" data-match="clero" onclick="selectRight(this)">Rezaba, educaba y conservaba el saber</div>
+        <div class="match-item match-right" data-match="escudero" onclick="selectRight(this)">Ayudaba al caballero y cuidaba su armadura</div>
+        <div class="match-item match-right" data-match="nobleza" onclick="selectRight(this)">Defendía el feudo con sus armas</div>
+      </div>
+    </div>
+    <div class="feedback" id="fb-p2"></div>
+    <button class="btn-main" id="btn-p2" onclick="goP3()" style="display:none">🗝️ ¡Siguiente prueba!</button>
+  </div>
+</div>
+
+<!-- PUZZLE 3: 6 PREGUNTAS -->
+<div class="screen" id="s-p3">
+  <div class="game-header" style="max-width:620px;width:100%;">
+    <span class="step-label">3/4</span>
+    <div class="progress-bar"><div class="progress-fill" id="prog3" style="width:50%"></div></div>
+    <span class="step-label" id="sc3">0 pts</span>
+  </div>
+  <div class="card animate-in">
+    <div class="puzzle-num">🔐 PRUEBA 3 DE 4 — EL CÓDIGO SECRETO</div>
+    <div class="puzzle-title">6 preguntas para abrir la puerta</div>
+    <div class="tip">📌 Responde las 6 preguntas. Cada respuesta correcta suma puntos.</div>
+    <div class="q-progress" id="q-progress">Respondidas: 0 / 6</div>
+    <div id="q-container"></div>
+    <div class="feedback" id="fb-p3"></div>
+    <button class="btn-main" id="btn-p3" onclick="goP4()" style="display:none">🗝️ ¡Última prueba!</button>
+  </div>
+</div>
+
+<!-- PUZZLE 4: FEUDO -->
+<div class="screen" id="s-p4">
+  <div class="game-header" style="max-width:620px;width:100%;">
+    <span class="step-label">4/4</span>
+    <div class="progress-bar"><div class="progress-fill" id="prog4" style="width:75%"></div></div>
+    <span class="step-label" id="sc4">0 pts</span>
+  </div>
+  <div class="card animate-in">
+    <div class="puzzle-num">🔐 PRUEBA FINAL — GOBIERNA TU FEUDO</div>
+    <div class="puzzle-title">Eres el señor del feudo</div>
+    <div class="tip">📌 Toma 5 decisiones como señor feudal. Cada elección tiene consecuencias.</div>
+    <div class="feudo-header">
+      <div style="font-family:'Cinzel',serif;font-size:12px;color:var(--gold-dark);margin-bottom:8px;letter-spacing:1px;">ESTADO DE TU FEUDO</div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;">
+        <div class="feudo-stat">
+          <span style="font-size:18px;">👑</span>
+          <div><div class="feudo-stat-label">AUTORIDAD</div>
+          <div class="feudo-bar" id="bar-auto">
+            <div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg"></div><div class="feudo-bar-seg"></div>
+          </div></div>
+        </div>
+        <div class="feudo-stat">
+          <span style="font-size:18px;">🌾</span>
+          <div><div class="feudo-stat-label">COSECHA</div>
+          <div class="feudo-bar" id="bar-cosecha">
+            <div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg"></div><div class="feudo-bar-seg"></div>
+          </div></div>
+        </div>
+        <div class="feudo-stat">
+          <span style="font-size:18px;">😊</span>
+          <div><div class="feudo-stat-label">FELICIDAD</div>
+          <div class="feudo-bar" id="bar-felicidad">
+            <div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg filled"></div><div class="feudo-bar-seg"></div><div class="feudo-bar-seg"></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+    <div class="scenario-counter" id="sc-counter">Situación 1 de 5</div>
+    <div class="scenario-box" id="scenario-box"></div>
+    <div class="feedback" id="fb-p4"></div>
+    <button class="btn-main" id="btn-p4-next" onclick="nextScenario()" style="display:none">➡️ Siguiente situación</button>
+    <button class="btn-main" id="btn-p4-finish" onclick="finishGame()" style="display:none">🏆 ¡Ver mi resultado final!</button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div class="screen" id="s-final">
+  <div class="card animate-in" style="margin-top:20px;text-align:center;">
+    <div class="big-emoji">🎉</div>
+    <div class="game-title">¡Has escapado del castillo!</div>
+    <div class="divider">✦ ✦ ✦</div>
+    <div class="stars" id="stars-display">⭐⭐⭐</div>
+    <div class="score-display">
+      <div class="score-num" id="final-score">0</div>
+      <div class="score-label">PUNTOS DE CABALLERO</div>
+    </div>
+    <div class="breakdown">
+      <div class="breakdown-item"><div class="breakdown-num" id="b1">0</div><div class="breakdown-label">PIRÁMIDE</div></div>
+      <div class="breakdown-item"><div class="breakdown-num" id="b2">0</div><div class="breakdown-label">FUNCIONES</div></div>
+      <div class="breakdown-item"><div class="breakdown-num" id="b3">0</div><div class="breakdown-label">PREGUNTAS</div></div>
+      <div class="breakdown-item"><div class="breakdown-num" id="b4">0</div><div class="breakdown-label">FEUDO</div></div>
+    </div>
+    <div class="certificate">
+      <p>Por la presente se certifica que</p>
+      <div class="cert-name" id="cert-name">—</div>
+      <p>ha demostrado conocer el sistema feudal medieval<br>y ha gobernado su feudo con sabiduría.</p>
+    </div>
+    <div class="divider">✦ ✦ ✦</div>
+    <button class="btn-main" onclick="restartGame()">🔄 Jugar otra vez</button>
+  </div>
+</div>
+
+<script>
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+let playerName='', totalScore=0;
+let s1=0, s2=0, s3=0, s4=0;
+let draggedItem=null, touchDragItem=null;
+let selectedLeft=null, matchedCount=0;
+let qAnswered=0;
+let feudoStats={auto:3,cosecha:3,felicidad:3};
+let scenarioIdx=0, scenarioDone=false;
+
+// ── PREGUNTAS P3 ─────────────────────────────────────────────────────────────
+const QUESTIONS=[
+  {q:"¿Cuántos estamentos principales tenía la sociedad feudal?",opts:["2","3","4","6"],c:2},
+  {q:"¿Qué era el <strong>diezmo</strong>?",opts:["El sueldo del rey","La décima parte de la cosecha del campesino","El impuesto de los nobles al clero","El nombre del castillo principal"],c:1},
+  {q:"¿Cuál de estos estamentos era <strong>NO privilegiado</strong>?",opts:["El Rey","La Nobleza","El Clero","Los Campesinos"],c:3},
+  {q:"¿Qué recibían los campesinos del señor feudal a cambio de su trabajo?",opts:["Dinero y joyas","Acceso a la universidad","Protección y tierras para cultivar","Permiso para ir a la guerra"],c:2},
+  {q:"¿Cómo se llamaba el sistema de gobierno de la Edad Media?",opts:["Democracia","Feudalismo","Capitalismo","Republicanismo"],c:1},
+  {q:"¿Qué privilegio tenían el Rey, la Nobleza y el Clero que los campesinos NO tenían?",opts:["Podían comer más","No pagaban impuestos","Vivían más años","Podían tener caballos"],c:1},
+];
+
+// ── ESCENARIOS P4 ─────────────────────────────────────────────────────────────
+const SCENARIOS=[
+  {
+    icon:"🌾",
+    text:"Ha sido un año de mala cosecha. Tus campesinos apenas tienen comida. El diezmo de este año los dejaría sin nada. ¿Qué haces?",
+    choices:[
+      {txt:"Reduces el diezmo a la mitad este año.", good:true, effects:{auto:-1,cosecha:1,felicidad:2}, cons:"✅ Sabio. Los campesinos trabajarán mejor el año que viene. Tu autoridad baja un poco, pero la felicidad sube."},
+      {txt:"Cobras el diezmo completo. Las normas son las normas.", good:false, effects:{auto:1,cosecha:-1,felicidad:-2}, cons:"❌ Los campesinos están al límite. Algunos huyen del feudo. Pierdes mano de obra."},
+    ]
+  },
+  {
+    icon:"⚔️",
+    text:"El rey te pide que envíes a tus caballeros a una guerra lejana. Sin ellos, tu feudo quedará sin defensa durante 6 meses.",
+    choices:[
+      {txt:"Envías a la mitad de tus caballeros y guardas la otra mitad.", good:true, effects:{auto:1,cosecha:0,felicidad:1}, cons:"✅ Equilibrio perfecto. El rey está satisfecho y tu feudo sigue protegido."},
+      {txt:"Te niegas. Tu feudo es tu prioridad.", good:false, effects:{auto:-2,cosecha:0,felicidad:0}, cons:"❌ El rey está furioso. Has roto el pacto feudal. Tu autoridad cae en picado."},
+    ]
+  },
+  {
+    icon:"✝️",
+    text:"El obispo del clero quiere construir una gran iglesia en tus tierras. Necesita que cedas terreno y mano de obra de tus campesinos.",
+    choices:[
+      {txt:"Aceptas. La Iglesia tiene mucho poder y es mejor tenerla de tu lado.", good:true, effects:{auto:1,cosecha:-1,felicidad:1}, cons:"✅ La Iglesia habla bien de ti. Ganas autoridad, aunque la cosecha baja un poco ese año."},
+      {txt:"Rechazas. Tus campesinos ya tienen bastante trabajo.", good:false, effects:{auto:-1,cosecha:1,felicidad:0}, cons:"❌ El clero no está contento contigo. Tu autoridad baja, aunque la cosecha mejora."},
+    ]
+  },
+  {
+    icon:"🏰",
+    text:"Un mercader quiere instalar un mercado (feria) en tu feudo una vez por semana. Los campesinos podrían vender sus productos.",
+    choices:[
+      {txt:"Aceptas a cambio de cobrar un pequeño impuesto por cada venta.", good:true, effects:{auto:0,cosecha:1,felicidad:2}, cons:"✅ Excelente decisión. El comercio mejora la economía y todos están contentos."},
+      {txt:"Rechazas. No quieres extraños en tu feudo.", good:false, effects:{auto:0,cosecha:0,felicidad:-1}, cons:"❌ Los campesinos se quedan sin poder vender su excedente. La felicidad baja."},
+    ]
+  },
+  {
+    icon:"📜",
+    text:"Un campesino anciano ya no puede trabajar. Su hijo quiere aprender a leer con los monjes, pero tú necesitas brazos en el campo.",
+    choices:[
+      {txt:"Permites que estudie. Un hombre educado puede ser útil al feudo.", good:true, effects:{auto:0,cosecha:-1,felicidad:2}, cons:"✅ Generoso. La cosecha baja un poco pero la familia es leal a ti para siempre."},
+      {txt:"Le obligas a quedarse en el campo. El feudo necesita trabajadores.", good:false, effects:{auto:0,cosecha:1,felicidad:-2}, cons:"❌ La cosecha mejora, pero la gente murmura que eres cruel. La felicidad cae."},
+    ]
+  },
+];
+
+// ── INTRO ─────────────────────────────────────────────────────────────────────
+function checkName(){
+  document.getElementById('start-btn').disabled = document.getElementById('player-name').value.trim().length < 2;
+}
+function startGame(){
+  playerName = document.getElementById('player-name').value.trim();
+  showScreen('s-p1');
+}
+
+// ── DRAG P1 ───────────────────────────────────────────────────────────────────
+function dragStart(e,name){draggedItem=name;e.dataTransfer.setData('text/plain',name);}
+function allowDrop(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+document.addEventListener('dragleave',e=>{if(e.target.classList.contains('pyramid-slot'))e.target.classList.remove('drag-over');});
+function dropCard(e,slot){e.preventDefault();slot.classList.remove('drag-over');const n=e.dataTransfer.getData('text/plain')||draggedItem;if(n)placeInSlot(slot,n);}
+function touchStart(e,name){touchDragItem=name;}
+function touchMove(e){e.preventDefault();}
+function touchDrop(e,slot){e.preventDefault();if(!touchDragItem)return;placeInSlot(slot,touchDragItem);touchDragItem=null;}
+
+function placeInSlot(slot,name){
+  const ex=slot.querySelector('.placed-card');
+  if(ex){const old=document.getElementById('dc-'+ex.dataset.name.toLowerCase());if(old)old.classList.remove('placed');slot.removeChild(ex);}
+  const pc=document.createElement('div');pc.className='placed-card';pc.dataset.name=name;
+  const em={Rey:'👑',Nobleza:'⚔️',Clero:'✝️',Campesinos:'👨‍🌾'};
+  pc.textContent=(em[name]||'')+' '+name;slot.appendChild(pc);
+  const card=document.getElementById('dc-'+name.toLowerCase());if(card)card.classList.add('placed');
+  const filled=Array.from(document.querySelectorAll('.pyramid-slot')).filter(s=>s.querySelector('.placed-card')).length;
+  document.getElementById('btn-p1').disabled=filled<4;
+}
+
+function checkP1(){
+  const slots=document.querySelectorAll('.pyramid-slot');
+  let correct=0;slots.forEach(s=>{const pc=s.querySelector('.placed-card');if(pc&&pc.dataset.name===s.dataset.answer)correct++;});
+  const fb=document.getElementById('fb-p1');
+  if(correct===4){
+    s1=300;totalScore+=300;updateScores();
+    fb.className='feedback ok';fb.textContent='✅ ¡Perfecto! La pirámide es correcta. +300 puntos';
+    const btn=document.getElementById('btn-p1');btn.textContent='🗝️ ¡Siguiente prueba!';btn.onclick=()=>showScreen('s-p2');btn.disabled=false;
+    document.querySelectorAll('.drag-card').forEach(c=>c.setAttribute('draggable','false'));
+    document.querySelectorAll('.pyramid-slot').forEach(s=>{s.ondragover=null;s.ondrop=null;s.ontouchend=null;});
+  } else {
+    fb.className='feedback ko';fb.textContent=`❌ ${correct}/4 correctos. Pista: el Rey siempre va arriba, los Campesinos abajo.`;
+    document.querySelector('#s-p1 .card').classList.add('shake');setTimeout(()=>document.querySelector('#s-p1 .card').classList.remove('shake'),300);
+  }
+}
+
+// ── MATCHING P2 ───────────────────────────────────────────────────────────────
+function selectLeft(el){
+  if(el.classList.contains('matched-ok'))return;
+  document.querySelectorAll('.match-left.selected').forEach(e=>e.classList.remove('selected'));
+  selectedLeft=el;el.classList.add('selected');
+}
+function selectRight(el){
+  if(!selectedLeft||el.classList.contains('matched-ok'))return;
+  if(selectedLeft.dataset.id===el.dataset.match){
+    selectedLeft.classList.remove('selected');selectedLeft.classList.add('matched-ok');el.classList.add('matched-ok');
+    matchedCount++;s2+=50;totalScore+=50;updateScores();
+    document.getElementById('match-score').textContent=`Emparejados: ${matchedCount} / 6`;
+    if(matchedCount===6){
+      document.getElementById('fb-p2').className='feedback ok';
+      document.getElementById('fb-p2').textContent='✅ ¡Excelente! Has unido todos los estamentos correctamente.';
+      document.getElementById('btn-p2').style.display='block';
+      buildP3();
+    }
+  } else {
+    selectedLeft.classList.remove('selected');el.classList.add('matched-ko');
+    setTimeout(()=>el.classList.remove('matched-ko'),500);
+  }
+  selectedLeft=null;
+}
+
+// ── PREGUNTAS P3 ──────────────────────────────────────────────────────────────
+function buildP3(){
+  const c=document.getElementById('q-container');c.innerHTML='';
+  QUESTIONS.forEach((q,i)=>{
+    const box=document.createElement('div');box.className='q-block';
+    box.innerHTML=`<p class="q-text"><strong>${i+1}.</strong> ${q.q}</p>
+      <div class="q-opts">${q.opts.map((o,j)=>`<button class="q-btn" onclick="answerQ(${i},${j},this)">${o}</button>`).join('')}</div>`;
+    c.appendChild(box);
+  });
+}
+function goP3(){showScreen('s-p3');}
+function answerQ(qi,ai,btn){
+  if(btn.disabled)return;
+  const isOk=ai===QUESTIONS[qi].c;
+  btn.classList.add(isOk?'correct':'wrong');
+  document.querySelectorAll(`#q-container .q-block:nth-child(${qi+1}) .q-btn`).forEach((b,j)=>{
+    b.disabled=true;
+    if(j===QUESTIONS[qi].c&&!isOk)b.classList.add('correct');
+  });
+  if(isOk){s3+=80;totalScore+=80;updateScores();}
+  qAnswered++;
+  document.getElementById('q-progress').textContent=`Respondidas: ${qAnswered} / 6`;
+  if(qAnswered===6){
+    document.getElementById('fb-p3').className='feedback ok';
+    document.getElementById('fb-p3').textContent=`✅ ¡Has completado el código! Respuestas correctas: ${Math.round(s3/80)}/6`;
+    document.getElementById('btn-p3').style.display='block';
+    buildP4();
+  }
+}
+
+// ── FEUDO P4 ──────────────────────────────────────────────────────────────────
+function buildP4(){scenarioIdx=0;renderScenario();}
+function goP4(){showScreen('s-p4');}
+
+function renderScenario(){
+  const sc=SCENARIOS[scenarioIdx];
+  document.getElementById('sc-counter').textContent=`Situación ${scenarioIdx+1} de 5`;
+  document.getElementById('fb-p4').className='feedback';
+  document.getElementById('btn-p4-next').style.display='none';
+  document.getElementById('btn-p4-finish').style.display='none';
+  scenarioDone=false;
+  const box=document.getElementById('scenario-box');
+  box.innerHTML=`
+    <div class="scenario-icon">${sc.icon}</div>
+    <p class="scenario-text">${sc.text}</p>
+    <div class="scenario-choices">
+      ${sc.choices.map((ch,i)=>`<button class="choice-btn" onclick="chooseAction(${i},this)">${ch.txt}</button>`).join('')}
+    </div>
+    <div class="consequence-box" id="cons-box"></div>`;
+}
+
+function chooseAction(idx,btn){
+  if(scenarioDone)return;
+  scenarioDone=true;
+  const sc=SCENARIOS[scenarioIdx];
+  const ch=sc.choices[idx];
+  document.querySelectorAll('.choice-btn').forEach(b=>b.disabled=true);
+  btn.classList.add(ch.good?'chosen-good':'chosen-bad');
+  // Aplicar efectos a las barras
+  Object.entries(ch.effects).forEach(([k,v])=>{
+    feudoStats[k]=Math.max(0,Math.min(5,feudoStats[k]+v));
+    updateBar(k);
+  });
+  // Puntos
+  if(ch.good){s4+=60;totalScore+=60;updateScores();}
+  // Consecuencia
+  const cons=document.getElementById('cons-box');
+  cons.textContent=ch.cons;cons.classList.add('show');
+  // Botón siguiente / final
+  if(scenarioIdx<4){document.getElementById('btn-p4-next').style.display='block';}
+  else{document.getElementById('btn-p4-finish').style.display='block';}
+}
+
+function nextScenario(){
+  scenarioIdx++;
+  renderScenario();
+}
+
+function updateBar(stat){
+  const barId={auto:'bar-auto',cosecha:'bar-cosecha',felicidad:'bar-felicidad'}[stat];
+  const bar=document.getElementById(barId);
+  if(!bar)return;
+  const segs=bar.querySelectorAll('.feudo-bar-seg');
+  segs.forEach((s,i)=>s.classList.toggle('filled',i<feudoStats[stat]));
+}
+
+// ── FINAL ─────────────────────────────────────────────────────────────────────
+function finishGame(){
+  document.getElementById('final-score').textContent=totalScore;
+  document.getElementById('cert-name').textContent=playerName;
+  document.getElementById('b1').textContent=s1;
+  document.getElementById('b2').textContent=s2;
+  document.getElementById('b3').textContent=s3;
+  document.getElementById('b4').textContent=s4;
+  const stars=totalScore>=700?'⭐⭐⭐':totalScore>=450?'⭐⭐':'⭐';
+  document.getElementById('stars-display').textContent=stars;
+  showScreen('s-final');launchConfetti();
+}
+
+function launchConfetti(){
+  const colors=['#c9a227','#1a5c2a','#8b1a1a','#1a3a5c','#f0c040'];
+  for(let i=0;i<50;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');p.className='confetti-piece';
+      p.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${colors[Math.floor(Math.random()*5)]};transform:rotate(${Math.random()*360}deg);animation-delay:${Math.random()*.6}s;`;
+      document.body.appendChild(p);setTimeout(()=>p.remove(),2200);
+    },i*25);
+  }
+}
+
+function restartGame(){
+  totalScore=0;s1=0;s2=0;s3=0;s4=0;
+  matchedCount=0;selectedLeft=null;qAnswered=0;
+  feudoStats={auto:3,cosecha:3,felicidad:3};scenarioIdx=0;
+  // Reset P1
+  document.querySelectorAll('.pyramid-slot').forEach(s=>{
+    const pc=s.querySelector('.placed-card');if(pc)s.removeChild(pc);
+    s.ondragover=allowDrop;s.ondrop=e=>dropCard(e,s);s.ontouchend=e=>touchDrop(e,s);
+  });
+  document.querySelectorAll('.drag-card').forEach(c=>{c.classList.remove('placed');c.setAttribute('draggable','true');});
+  document.getElementById('fb-p1').className='feedback';
+  const bp1=document.getElementById('btn-p1');bp1.disabled=true;bp1.textContent='🔍 Comprobar pirámide';bp1.onclick=checkP1;
+  // Reset P2
+  document.querySelectorAll('.match-item').forEach(el=>el.classList.remove('selected','matched-ok','matched-ko'));
+  document.getElementById('match-score').textContent='Emparejados: 0 / 6';
+  document.getElementById('fb-p2').className='feedback';
+  document.getElementById('btn-p2').style.display='none';
+  // Reset P3
+  document.getElementById('q-container').innerHTML='';
+  document.getElementById('q-progress').textContent='Respondidas: 0 / 6';
+  document.getElementById('fb-p3').className='feedback';
+  document.getElementById('btn-p3').style.display='none';
+  // Reset P4
+  ['bar-auto','bar-cosecha','bar-felicidad'].forEach(id=>{
+    document.querySelectorAll(`#${id} .feudo-bar-seg`).forEach((s,i)=>s.classList.toggle('filled',i<3));
+  });
+  updateScores();
+  showScreen('s-p1');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');window.scrollTo(0,0);
+}
+function updateScores(){
+  ['sc1','sc2','sc3','sc4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=totalScore+' pts';});
+}
+</script>
+</body>
+</html>
