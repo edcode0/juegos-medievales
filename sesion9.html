@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>La Ruleta Medieval — Arte Románico y Gótico</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f0c07;
+  --panel:#1a1508;
+  --panel2:#252010;
+  --border:#3a3010;
+  --gold:#d4a820; --gold2:#f0c840; --gold3:#fff5b0;
+  --rom:#6b1a0a; --rom2:#c03010; --rom3:#ff7050;
+  --got:#0a1a6b; --got2:#2050c0; --got3:#70a0ff;
+  --stone:#5a4a30; --stone2:#8a7050; --stone3:#c0a870;
+  --glass1:#c00020; --glass2:#00a040; --glass3:#0060c0; --glass4:#c08000;
+  --text:#f0e8d0; --text2:#a09060;
+  --correct:#0d5c2a; --correct2:#20c060;
+  --wrong:#6e1a1a; --wrong2:#ff4040;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+body{
+  background:var(--bg);
+  font-family:'Crimson Text',serif;
+  min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(107,26,10,.3) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 100%, rgba(10,26,107,.2) 0%, transparent 50%),
+    repeating-linear-gradient(60deg,transparent,transparent 40px,rgba(212,168,32,.02) 40px,rgba(212,168,32,.02) 41px);
+}
+
+/* PANTALLAS */
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:14px 13px 40px;}
+.screen.active{display:flex;}
+
+/* VIDRIERA DECORATIVA SVG */
+.vidriera-top{
+  width:100%;max-width:580px;
+  height:28px;margin-bottom:0;
+  display:flex;justify-content:center;gap:0;
+  overflow:hidden;
+}
+.vglass{height:28px;flex:1;opacity:.7;}
+
+/* CARD */
+.card{
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border-radius:12px;
+  border:2px solid var(--stone);
+  box-shadow:0 8px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(212,168,32,.08);
+  padding:22px 18px;width:100%;max-width:580px;
+  position:relative;overflow:hidden;
+}
+.card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--rom2),var(--gold2),var(--got2));
+}
+
+/* TIPOS */
+.gtitle{font-family:'Cinzel',serif;font-size:clamp(20px,5vw,30px);font-weight:900;
+  background:linear-gradient(135deg,var(--rom3),var(--gold2),var(--got3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-align:center;line-height:1.2;margin-bottom:4px;}
+.gsubtitle{font-family:'Cinzel',serif;font-size:clamp(10px,2.3vw,12px);color:var(--stone3);
+  text-align:center;letter-spacing:2px;margin-bottom:14px;}
+.narrative{font-size:clamp(13px,3vw,15px);color:var(--text2);line-height:1.6;
+  text-align:center;margin-bottom:16px;font-style:italic;}
+
+/* RULETA */
+.wheel-container{
+  display:flex;flex-direction:column;align-items:center;
+  margin:10px 0 16px;position:relative;
+}
+.wheel-wrap{position:relative;width:clamp(220px,65vw,300px);height:clamp(220px,65vw,300px);}
+canvas#wheel{width:100%;height:100%;border-radius:50%;
+  box-shadow:0 0 0 4px var(--stone), 0 0 0 6px var(--gold), 0 0 30px rgba(212,168,32,.3);
+  cursor:pointer;touch-action:none;
+}
+.wheel-pointer{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  width:0;height:0;
+  border-left:14px solid transparent;
+  border-right:14px solid transparent;
+  border-top:28px solid var(--gold2);
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));
+  z-index:10;
+}
+.wheel-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:3px solid var(--stone);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;cursor:pointer;z-index:10;
+  box-shadow:0 0 12px rgba(212,168,32,.4);
+}
+
+.spin-btn{
+  margin-top:12px;padding:12px 32px;
+  background:linear-gradient(135deg,var(--stone) 0%,var(--stone2) 50%,var(--stone) 100%);
+  border:2px solid var(--stone2);border-radius:30px;
+  font-family:'Cinzel',serif;font-size:clamp(13px,3vw,16px);font-weight:700;
+  color:var(--gold3);cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);letter-spacing:.5px;
+}
+.spin-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.spin-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* ESTADÍSTICAS */
+.stats-bar{
+  display:flex;justify-content:space-between;align-items:center;
+  width:100%;max-width:580px;
+  padding:10px 14px;
+  background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  margin-bottom:10px;
+}
+.stat-item{text-align:center;}
+.stat-num{font-family:'Cinzel',serif;font-size:clamp(18px,5vw,26px);font-weight:900;color:var(--gold2);}
+.stat-lbl{font-family:'Cinzel',serif;font-size:9px;color:var(--text2);letter-spacing:1px;}
+
+/* PREGUNTA */
+.q-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);
+  display:flex;align-items:center;justify-content:center;
+  z-index:100;padding:16px;display:none;
+}
+.q-overlay.show{display:flex;}
+.q-card{
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border:2px solid var(--gold);border-radius:14px;
+  padding:22px 18px;max-width:540px;width:100%;
+  box-shadow:0 0 40px rgba(212,168,32,.2);
+  position:relative;overflow:hidden;
+}
+.q-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--rom2),var(--gold2),var(--got2));}
+.q-category{
+  display:inline-block;padding:4px 12px;border-radius:12px;
+  font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:1px;
+  margin-bottom:10px;
+}
+.cat-rom{background:var(--rom);color:var(--rom3);border:1px solid var(--rom2);}
+.cat-got{background:var(--got);color:var(--got3);border:1px solid var(--got2);}
+.cat-art{background:rgba(212,168,32,.2);color:var(--gold2);border:1px solid var(--gold);}
+.cat-gen{background:rgba(90,74,48,.4);color:var(--stone3);border:1px solid var(--stone2);}
+
+.q-text{
+  font-size:clamp(15px,3.8vw,19px);color:var(--text);
+  line-height:1.55;margin-bottom:16px;font-weight:600;text-align:center;
+}
+.q-text strong{color:var(--gold2);}
+
+.q-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.q-opt{
+  padding:12px 10px;background:var(--panel2);
+  border:2px solid var(--border);border-radius:9px;
+  font-family:'Crimson Text',serif;font-size:clamp(13px,3vw,15px);
+  color:var(--text);cursor:pointer;transition:all .2s;
+  text-align:left;line-height:1.3;
+  display:flex;align-items:flex-start;gap:7px;
+}
+.q-opt .ol{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);min-width:18px;}
+.q-opt:hover:not(:disabled){border-color:var(--gold);background:rgba(212,168,32,.08);transform:translateX(2px);}
+.q-opt.ok{border-color:var(--correct2);background:rgba(20,128,60,.2);color:var(--correct2);}
+.q-opt.ko{border-color:var(--wrong2);background:rgba(110,26,26,.3);color:var(--wrong2);}
+.q-opt:disabled{cursor:default;}
+
+.q-exp{
+  margin-top:12px;padding:10px 13px;
+  background:rgba(212,168,32,.08);border-left:3px solid var(--gold);
+  border-radius:0 8px 8px 0;
+  font-size:clamp(12px,2.8vw,14px);color:var(--text2);line-height:1.5;
+  font-style:italic;display:none;
+}
+.q-exp.show{display:block;}
+
+.q-next{
+  width:100%;padding:12px;margin-top:12px;
+  background:linear-gradient(135deg,var(--stone) 0%,var(--stone2) 50%,var(--stone) 100%);
+  border:2px solid var(--stone2);border-radius:9px;
+  font-family:'Cinzel',serif;font-size:clamp(13px,3vw,15px);font-weight:700;
+  color:var(--gold3);cursor:pointer;transition:all .2s;display:none;
+}
+.q-next:hover{transform:translateY(-1px);}
+
+/* HISTORIAL */
+.history{width:100%;max-width:580px;margin-top:10px;}
+.history-item{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 12px;border-radius:8px;margin-bottom:5px;
+  font-size:clamp(12px,2.8vw,13px);
+}
+.history-item.h-ok{background:rgba(20,128,60,.15);border:1px solid rgba(32,192,96,.2);color:var(--correct2);}
+.history-item.h-ko{background:rgba(110,26,26,.2);border:1px solid rgba(255,64,64,.2);color:var(--wrong2);}
+.h-icon{font-size:14px;min-width:18px;}
+.h-text{font-family:'Crimson Text',serif;flex:1;line-height:1.3;}
+.h-pts{font-family:'Cinzel',serif;font-size:11px;font-weight:700;white-space:nowrap;}
+
+/* FINAL */
+.final-card{
+  background:linear-gradient(160deg,var(--panel2),var(--panel));
+  border:2px solid var(--gold);border-radius:14px;
+  padding:26px 20px;width:100%;max-width:580px;margin-top:16px;text-align:center;
+  box-shadow:0 0 40px rgba(212,168,32,.2);
+}
+.f-trophy{font-size:clamp(52px,13vw,72px);margin-bottom:6px;line-height:1;}
+.f-title{font-family:'Cinzel',serif;font-size:clamp(18px,4.5vw,26px);font-weight:900;color:var(--gold2);margin-bottom:6px;}
+.f-score{font-family:'Cinzel',serif;font-size:clamp(38px,10vw,58px);font-weight:900;
+  background:linear-gradient(135deg,var(--rom3),var(--gold2),var(--got3));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1;}
+.f-label{font-family:'Cinzel',serif;font-size:12px;color:var(--text2);letter-spacing:2px;margin-bottom:12px;}
+.f-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0;}
+.f-stat{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:10px 6px;}
+.f-stat-n{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--gold);}
+.f-stat-l{font-family:'Cinzel',serif;font-size:9px;color:var(--text2);margin-top:2px;letter-spacing:.5px;}
+.f-cert{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin:12px 0;}
+.f-cert p{color:var(--text2);font-size:14px;line-height:1.7;}
+.f-name{font-family:'Cinzel',serif;font-size:15px;color:var(--gold2);
+  border-bottom:1px solid var(--border);margin:6px 20px;padding-bottom:5px;}
+.rnk{display:inline-block;padding:7px 18px;border-radius:20px;
+  font-family:'Cinzel',serif;font-size:12px;font-weight:700;margin:10px 0;}
+
+/* BTN PRINCIPAL */
+.btn-main{
+  width:100%;padding:13px;
+  background:linear-gradient(135deg,var(--rom) 0%,var(--rom2) 30%,var(--got2) 70%,var(--got) 100%);
+  border:2px solid var(--stone);border-radius:10px;
+  font-family:'Cinzel',serif;font-size:clamp(13px,3vw,16px);font-weight:700;
+  color:var(--gold3);cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 16px rgba(0,0,0,.4);margin-top:12px;letter-spacing:.5px;
+}
+.btn-main:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.5);}
+.btn-main:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* NAME INPUT */
+.name-inp{
+  width:100%;padding:12px 16px;
+  background:rgba(255,255,255,.05);border:2px solid var(--border);border-radius:10px;
+  font-family:'Crimson Text',serif;font-size:17px;color:var(--text);text-align:center;
+  margin-bottom:4px;transition:border-color .2s;
+}
+.name-inp:focus{outline:none;border-color:var(--gold);}
+.name-inp::placeholder{color:var(--text2);}
+
+/* ANIMACIONES */
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes spin-in{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes confetti{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100px) rotate(720deg);opacity:0}}
+@keyframes bounce{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.anim{animation:fadeUp .35s ease forwards;}
+.bounce{animation:bounce .3s ease;}
+.confetti-p{position:fixed;width:7px;height:7px;border-radius:2px;
+  animation:confetti 1.4s ease forwards;pointer-events:none;z-index:999;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--panel);}
+::-webkit-scrollbar-thumb{background:var(--stone);border-radius:2px;}
+
+/* VIDRIERA en rueda */
+.stained{display:flex;justify-content:center;gap:3px;margin:6px 0;}
+.sg{width:18px;height:24px;border-radius:3px 3px 50% 50%;opacity:.8;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════ INTRO -->
+<div class="screen active" id="s-intro">
+  <div style="display:flex;gap:0;width:100%;max-width:580px;margin-bottom:0;margin-top:16px;">
+    <div style="height:20px;flex:1;background:var(--glass1);border-radius:4px 0 0 4px;opacity:.7;"></div>
+    <div style="height:20px;flex:1;background:var(--glass2);opacity:.7;"></div>
+    <div style="height:20px;flex:1;background:var(--glass3);opacity:.7;"></div>
+    <div style="height:20px;flex:1;background:var(--glass4);opacity:.7;"></div>
+    <div style="height:20px;flex:1;background:var(--glass1);opacity:.7;"></div>
+    <div style="height:20px;flex:1;background:var(--glass3);border-radius:0 4px 4px 0;opacity:.7;"></div>
+  </div>
+  <div class="card anim" style="border-radius:0 0 12px 12px;border-top:none;text-align:center;">
+    <div style="font-size:clamp(44px,11vw,64px);margin-bottom:6px;line-height:1;">🎡</div>
+    <div class="gtitle">La Ruleta Medieval</div>
+    <div class="gsubtitle">ARTE ROMÁNICO Y GÓTICO · SESIÓN 9</div>
+    <div class="stained">
+      <div class="sg" style="background:var(--glass1);"></div>
+      <div class="sg" style="background:var(--glass2);"></div>
+      <div class="sg" style="background:var(--glass3);"></div>
+      <div class="sg" style="background:var(--glass4);"></div>
+      <div class="sg" style="background:var(--glass1);"></div>
+      <div class="sg" style="background:var(--glass3);"></div>
+      <div class="sg" style="background:var(--glass2);"></div>
+      <div class="sg" style="background:var(--glass4);"></div>
+    </div>
+    <p class="narrative">
+      Gira la ruleta para recibir una pregunta.<br>
+      12 preguntas sobre románico, gótico y arte medieval.<br>
+      <strong style="color:var(--gold2)">¡Demuestra lo que sabes!</strong>
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0;">
+      <div style="background:var(--rom);border:1px solid var(--rom2);border-radius:8px;padding:8px 4px;text-align:center;">
+        <div style="font-size:20px;">⛪</div>
+        <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--rom3);margin-top:3px;letter-spacing:.5px;">ROMÁNICO</div>
+      </div>
+      <div style="background:var(--got);border:1px solid var(--got2);border-radius:8px;padding:8px 4px;text-align:center;">
+        <div style="font-size:20px;">🏰</div>
+        <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--got3);margin-top:3px;letter-spacing:.5px;">GÓTICO</div>
+      </div>
+      <div style="background:rgba(212,168,32,.15);border:1px solid var(--gold);border-radius:8px;padding:8px 4px;text-align:center;">
+        <div style="font-size:20px;">🎨</div>
+        <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold2);margin-top:3px;letter-spacing:.5px;">ARTE</div>
+      </div>
+      <div style="background:rgba(90,74,48,.3);border:1px solid var(--stone2);border-radius:8px;padding:8px 4px;text-align:center;">
+        <div style="font-size:20px;">📖</div>
+        <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--stone3);margin-top:3px;letter-spacing:.5px;">GENERAL</div>
+      </div>
+    </div>
+    <input class="name-inp" id="pname" placeholder="Escribe tu nombre..." oninput="checkN()">
+    <button class="btn-main" id="sbtn" onclick="startGame()" disabled>🎡 ¡Girar la ruleta!</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ JUEGO -->
+<div class="screen" id="s-game">
+  <!-- Stats -->
+  <div class="stats-bar anim">
+    <div class="stat-item">
+      <div class="stat-num" id="st-pts">0</div>
+      <div class="stat-lbl">PUNTOS</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="st-ok" style="color:var(--correct2);">0</div>
+      <div class="stat-lbl">CORRECTAS</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="st-left" style="color:var(--gold2);">12</div>
+      <div class="stat-lbl">RESTANTES</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num" id="st-ko" style="color:var(--wrong2);">0</div>
+      <div class="stat-lbl">FALLADAS</div>
+    </div>
+  </div>
+
+  <!-- Ruleta -->
+  <div class="card" style="text-align:center;padding:18px 16px;">
+    <div class="wheel-container">
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <canvas id="wheel" width="300" height="300" onclick="spinWheel()"></canvas>
+        <div class="wheel-center" onclick="spinWheel()">🎯</div>
+      </div>
+      <button class="spin-btn" id="spin-btn" onclick="spinWheel()">🎡 ¡Girar!</button>
+    </div>
+    <div id="spin-msg" style="font-family:'Cinzel',serif;font-size:13px;color:var(--text2);min-height:20px;margin-top:4px;"></div>
+  </div>
+
+  <!-- Historial -->
+  <div class="history" id="history"></div>
+</div>
+
+<!-- ══════════════════════════ OVERLAY PREGUNTA -->
+<div class="q-overlay" id="q-overlay">
+  <div class="q-card" style="animation:spin-in .3s ease;">
+    <div id="q-cat-badge"></div>
+    <div class="q-text" id="q-text">—</div>
+    <div class="q-opts" id="q-opts"></div>
+    <div class="q-exp" id="q-exp"></div>
+    <button class="q-next" id="q-next" onclick="closeQuestion()">➡️ Siguiente pregunta</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════ FINAL -->
+<div class="screen" id="s-final">
+  <div class="final-card anim">
+    <div class="f-trophy" id="ftrophy">🏛️</div>
+    <div class="f-title" id="ftitle">¡Gran artista medieval!</div>
+    <div class="f-score" id="fscore">0</div>
+    <div class="f-label">PUNTOS DE MAESTRO ARTESANO</div>
+    <div class="f-stats">
+      <div class="f-stat"><div class="f-stat-n" id="fs-ok">0</div><div class="f-stat-l">CORRECTAS</div></div>
+      <div class="f-stat"><div class="f-stat-n" id="fs-tot">12</div><div class="f-stat-l">PREGUNTAS</div></div>
+      <div class="f-stat"><div class="f-stat-n" id="fs-pct">0%</div><div class="f-stat-l">ACIERTO</div></div>
+    </div>
+    <div class="rnk" id="frnk">—</div>
+    <div class="f-cert">
+      <p>Maestro Artesano Medieval certifica que</p>
+      <div class="f-name" id="fcname">—</div>
+      <p>domina el arte románico, el arte gótico<br>y el trabajo de los monjes iluminadores.</p>
+    </div>
+    <button class="btn-main" onclick="restartGame()">🔄 Jugar otra vez</button>
+  </div>
+</div>
+
+<script>
+// ── PREGUNTAS ─────────────────────────────────────────────────────────────────
+const ALL_Q = [
+  // ROMÁNICO (🔴)
+  {cat:'rom', icon:'⛪', label:'ROMÁNICO',
+   q:"¿Qué tipo de arco es característico del estilo ROMÁNICO?",
+   opts:["Arco ojival (en punta)","Arco de medio punto (semicircular)","Arco árabe de herradura","Arco escarzano"],
+   c:1, pts:80,
+   exp:"El arco de medio punto es semicircular, como una media luna. Es el sello del románico."},
+  {cat:'rom', icon:'⛪', label:'ROMÁNICO',
+   q:"¿Cómo son los muros de una iglesia ROMÁNICA?",
+   opts:["Finos y con muchas ventanas","Muy gruesos y sólidos","De cristal y metal","Decorados con mosaicos"],
+   c:1, pts:80,
+   exp:"Los muros gruesos eran necesarios para sostener el peso del techo de piedra sin arbotantes."},
+  {cat:'rom', icon:'⛪', label:'ROMÁNICO',
+   q:"¿Por qué las iglesias románicas tienen ventanas tan pequeñas?",
+   opts:["Para ahorrar dinero","Porque no sabían hacer vidrieras","Porque los muros gruesos no aguantaban ventanas grandes","Por moda de la época"],
+   c:2, pts:100,
+   exp:"Los muros tan gruesos no podían tener grandes aberturas sin perder resistencia. Por eso el interior era oscuro."},
+  // GÓTICO (🔵)
+  {cat:'got', icon:'🏰', label:'GÓTICO',
+   q:"¿Qué es un ARBOTANTE en una catedral gótica?",
+   opts:["Una torre muy alta","Un arco exterior que sostiene el muro","Una vidriera de colores","La puerta principal"],
+   c:1, pts:100,
+   exp:"El arbotante es un arco que transmite el peso del techo hacia fuera. Gracias a él los muros pueden ser más finos y tener grandes ventanas."},
+  {cat:'got', icon:'🏰', label:'GÓTICO',
+   q:"¿Cómo termina el arco OJIVAL del estilo gótico?",
+   opts:["En semicírculo","En herradura","En punta, hacia arriba","En espiral"],
+   c:2, pts:80,
+   exp:"El arco ojival termina en punta. Esto permite construir estructuras más altas y distribuir mejor el peso."},
+  {cat:'got', icon:'🏰', label:'GÓTICO',
+   q:"¿Qué son las VIDRIERAS de las catedrales góticas?",
+   opts:["Pinturas en la pared","Ventanas de cristal de colores con historias","Espejos decorativos","Tapices bordados"],
+   c:1, pts:80,
+   exp:"Las vidrieras eran ventanas de cristal de colores que contaban historias de la Biblia. Eran la 'televisión' de la Edad Media para quienes no sabían leer."},
+  {cat:'got', icon:'🏰', label:'GÓTICO',
+   q:"¿En qué siglos se construyeron principalmente las catedrales GÓTICAS?",
+   opts:["Siglos VI-VIII","Siglos XI-XII","Siglos XII-XV","Siglos XVI-XVIII"],
+   c:2, pts:100,
+   exp:"El gótico se desarrolló entre los siglos XII y XV, posterior al románico que había dominado entre los siglos XI y XII."},
+  // ARTE (🎨)
+  {cat:'art', icon:'🎨', label:'ARTE MEDIEVAL',
+   q:"¿Cómo se llama la sala del monasterio donde los monjes copiaban libros?",
+   opts:["Biblioteca","Scriptorium","Claustro","Refectorio"],
+   c:1, pts:100,
+   exp:"El scriptorium era el taller de escritura. Podían tardar años en copiar un solo libro, decorando cada letra con oro y colores."},
+  {cat:'art', icon:'🎨', label:'ARTE MEDIEVAL',
+   q:"¿Qué es un MANUSCRITO ILUMINADO?",
+   opts:["Un libro con luz eléctrica","Un libro copiado a mano con letras decoradas en oro y colores","Un libro quemado por accidente","Un libro escrito en árabe"],
+   c:1, pts:100,
+   exp:"'Iluminado' viene de 'luz'. Las letras decoradas con pan de oro brillaban como si tuvieran luz propia."},
+  {cat:'art', icon:'🎨', label:'ARTE MEDIEVAL',
+   q:"¿Con qué material escribían los monjes en el scriptorium?",
+   opts:["Papel moderno","Pergamino (piel de animal tratada)","Tablillas de barro","Hojas de árbol"],
+   c:1, pts:80,
+   exp:"El pergamino se hacía con piel de oveja o cabra tratada y estirada. Era muy caro, por eso los libros eran tan valiosos."},
+  // GENERAL (📖)
+  {cat:'gen', icon:'📖', label:'GENERAL',
+   q:"¿Cuál es la diferencia principal entre románico y gótico?",
+   opts:["El románico es más antiguo y oscuro; el gótico más alto y luminoso","El románico es más alto; el gótico más bajo","Son exactamente iguales","El románico es árabe y el gótico cristiano"],
+   c:0, pts:80,
+   exp:"El gótico nació como evolución del románico. La gran innovación fue el arbotante, que permitió muros más altos, finos y con enormes ventanas."},
+  {cat:'gen', icon:'📖', label:'GENERAL',
+   q:"¿Por qué las catedrales góticas son tan altas?",
+   opts:["Para que se vieran desde lejos","Para acercarse a Dios y mostrar el poder de la Iglesia","Para que cupiera más gente","Por capricho de los arquitectos"],
+   c:1, pts:100,
+   exp:"La altura simbolizaba la búsqueda de Dios. También era una manera de demostrar el poder económico y la fe de la ciudad que la construía."},
+];
+
+// ── ESTADO ─────────────────────────────────────────────────────────────────────
+let pname='', score=0, okCount=0, koCount=0;
+let remaining=[], answered=[];
+let spinning=false, currentQ=null;
+
+const CAT_COLORS={
+  rom:{bg:'#3d0a05',border:'#c03010',text:'#ff7050'},
+  got:{bg:'#050a3d',border:'#2050c0',text:'#70a0ff'},
+  art:{bg:'rgba(212,168,32,.15)',border:'#d4a820',text:'#f0c840'},
+  gen:{bg:'rgba(90,74,48,.3)',border:'#8a7050',text:'#c0a870'},
+};
+
+// Segmentos de la ruleta
+const SEGMENTS = [
+  {label:'ROMÁNICO',color:'#6b1a0a',light:'#ff7050'},
+  {label:'GÓTICO',  color:'#0a1a6b',light:'#70a0ff'},
+  {label:'ARTE',    color:'#4a3800',light:'#f0c840'},
+  {label:'GENERAL', color:'#2a2010',light:'#c0a870'},
+  {label:'ROMÁNICO',color:'#8b2a1a',light:'#ff9070'},
+  {label:'GÓTICO',  color:'#1a2a8b',light:'#90b0ff'},
+  {label:'ARTE',    color:'#5a4800',light:'#ffd050'},
+  {label:'GENERAL', color:'#3a3020',light:'#d0b880'},
+];
+const SEG_MAP={ROMÁNICO:'rom',GÓTICO:'got',ARTE:'art',GENERAL:'gen'};
+
+let wheelAngle=0, wheelVelocity=0, wheelAnimating=false, targetAngle=0;
+
+// ── INTRO ──────────────────────────────────────────────────────────────────────
+function checkN(){document.getElementById('sbtn').disabled=document.getElementById('pname').value.trim().length<2;}
+
+function startGame(){
+  pname=document.getElementById('pname').value.trim();
+  remaining=[...ALL_Q].sort(()=>Math.random()-.5);
+  drawWheel();
+  showS('s-game');
+}
+
+// ── RUEDA ─────────────────────────────────────────────────────────────────────
+function drawWheel(angle=0){
+  const canvas=document.getElementById('wheel');
+  const ctx=canvas.getContext('2d');
+  const cx=canvas.width/2, cy=canvas.height/2, r=cx-4;
+  const n=SEGMENTS.length, arc=2*Math.PI/n;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  SEGMENTS.forEach((seg,i)=>{
+    const start=angle+i*arc-Math.PI/2;
+    const end=start+arc;
+    // Sector
+    ctx.beginPath();ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,end);ctx.closePath();
+    ctx.fillStyle=seg.color;ctx.fill();
+    ctx.strokeStyle='rgba(212,168,32,.3)';ctx.lineWidth=1.5;ctx.stroke();
+    // Texto
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start+arc/2);
+    ctx.textAlign='right';
+    ctx.fillStyle=seg.light;
+    ctx.font=`bold ${canvas.width<250?9:10}px 'Cinzel',serif`;
+    ctx.fillText(seg.label,r-8,4);
+    ctx.restore();
+  });
+  // Borde exterior
+  ctx.beginPath();ctx.arc(cx,cy,r,0,2*Math.PI);
+  ctx.strokeStyle='rgba(212,168,32,.5)';ctx.lineWidth=3;ctx.stroke();
+}
+
+function spinWheel(){
+  if(spinning||remaining.length===0)return;
+  if(answered.length>=ALL_Q.length){endGame();return;}
+  spinning=true;
+  document.getElementById('spin-btn').disabled=true;
+  document.getElementById('spin-msg').textContent='';
+
+  // Número fijo de frames para girar (~3 segundos a 60fps)
+  totalFrames = 180 + Math.floor(Math.random()*60);
+  currentFrame = 0;
+  spinIncrement = (0.25 + Math.random()*0.15);
+  requestAnimationFrame(animateSpin);
+}
+
+let totalFrames=0, currentFrame=0, spinIncrement=0;
+
+function animateSpin(){
+  currentFrame++;
+  // Desaceleración suave en el último 40% de los frames
+  const progress = currentFrame / totalFrames;
+  let speed;
+  if(progress < 0.6){
+    speed = spinIncrement;
+  } else {
+    const ease = 1 - ((progress - 0.6) / 0.4);
+    speed = spinIncrement * ease;
+  }
+  wheelAngle += Math.max(speed, 0.002);
+  drawWheel(wheelAngle);
+
+  if(currentFrame < totalFrames){
+    requestAnimationFrame(animateSpin);
+  } else {
+    wheelAngle = wheelAngle % (2*Math.PI);
+    drawWheel(wheelAngle);
+    spinning = false;
+    resolveSegment();
+  }
+}
+
+function resolveSegment(){
+  // El puntero está en la parte superior (270°)
+  const n=SEGMENTS.length;
+  const arc=2*Math.PI/n;
+  const ptr=(3*Math.PI/2 - wheelAngle%(2*Math.PI) + 4*Math.PI)%(2*Math.PI);
+  const idx=Math.floor(ptr/arc)%n;
+  const segLabel=SEGMENTS[idx].label;
+  const catKey=SEG_MAP[segLabel];
+
+  // Buscar pregunta de esa categoría en remaining
+  let q=remaining.find(qq=>qq.cat===catKey);
+  if(!q) q=remaining[0]; // fallback a cualquiera
+  if(!q){endGame();return;}
+
+  remaining=remaining.filter(qq=>qq!==q);
+  currentQ=q;
+  document.getElementById('spin-msg').textContent=`¡Categoría: ${q.label}!`;
+  setTimeout(()=>showQuestion(q),600);
+}
+
+// ── PREGUNTA ──────────────────────────────────────────────────────────────────
+function showQuestion(q){
+  const cc=CAT_COLORS[q.cat];
+  document.getElementById('q-cat-badge').innerHTML=
+    `<span class="q-category cat-${q.cat}">${q.icon} ${q.label}</span>`;
+  document.getElementById('q-text').innerHTML=q.q;
+  document.getElementById('q-exp').className='q-exp';
+  document.getElementById('q-exp').textContent='';
+  document.getElementById('q-next').style.display='none';
+
+  const grid=document.getElementById('q-opts');
+  grid.innerHTML='';
+  const letters=['A','B','C','D'];
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='q-opt';
+    btn.innerHTML=`<span class="ol">${letters[i]}</span><span>${opt}</span>`;
+    btn.onclick=()=>answerQ(i,q,btn);
+    grid.appendChild(btn);
+  });
+  document.getElementById('q-overlay').classList.add('show');
+}
+
+function answerQ(idx,q,btn){
+  const btns=document.querySelectorAll('.q-opt');
+  btns.forEach(b=>b.disabled=true);
+  const ok=idx===q.c;
+  btn.classList.add(ok?'ok':'ko');
+  btns[q.c].classList.add('ok');
+
+  if(ok){score+=q.pts;okCount++;}
+  else koCount++;
+  answered.push({q:q.q,ok,pts:ok?q.pts:0});
+  addHistory(q.q,ok,ok?q.pts:0);
+  updateStats();
+
+  const exp=document.getElementById('q-exp');
+  exp.textContent=q.exp;exp.classList.add('show');
+  document.getElementById('q-next').style.display='block';
+}
+
+function closeQuestion(){
+  document.getElementById('q-overlay').classList.remove('show');
+  document.getElementById('spin-btn').disabled=false;
+  document.getElementById('spin-msg').textContent='';
+  if(answered.length>=ALL_Q.length){
+    setTimeout(endGame,300);
+  }
+}
+
+// ── HISTORIAL ─────────────────────────────────────────────────────────────────
+function addHistory(q,ok,pts){
+  const hist=document.getElementById('history');
+  const item=document.createElement('div');
+  item.className=`history-item ${ok?'h-ok':'h-ko'}`;
+  const short=q.length>60?q.substring(0,57)+'...':q;
+  item.innerHTML=`<span class="h-icon">${ok?'✅':'❌'}</span>
+    <span class="h-text">${short}</span>
+    <span class="h-pts">${ok?'+'+pts+' pts':'0 pts'}</span>`;
+  hist.insertBefore(item,hist.firstChild);
+  if(hist.children.length>6) hist.removeChild(hist.lastChild);
+}
+
+function updateStats(){
+  document.getElementById('st-pts').textContent=score;
+  document.getElementById('st-ok').textContent=okCount;
+  document.getElementById('st-ko').textContent=koCount;
+  document.getElementById('st-left').textContent=Math.max(0,ALL_Q.length-answered.length);
+}
+
+// ── FINAL ─────────────────────────────────────────────────────────────────────
+function endGame(){
+  document.getElementById('fscore').textContent=score;
+  document.getElementById('fcname').textContent=pname;
+  document.getElementById('fs-ok').textContent=okCount;
+  document.getElementById('fs-tot').textContent=answered.length;
+  const pct=answered.length>0?Math.round(okCount/answered.length*100):0;
+  document.getElementById('fs-pct').textContent=pct+'%';
+
+  let trophy,title,rank,rnkStyle;
+  if(pct>=90){
+    trophy='🏛️';title='¡Maestro de las Catedrales!';
+    rank='GRAN MAESTRO ARQUITECTO';
+    rnkStyle='background:linear-gradient(135deg,var(--rom),var(--got2));color:var(--gold3);border:2px solid var(--gold);';
+    launchConfetti();
+  }else if(pct>=70){
+    trophy='🎨';title='¡Excelente artista medieval!';
+    rank='MAESTRO ARTESANO';
+    rnkStyle='background:rgba(212,168,32,.2);color:var(--gold2);border:2px solid var(--gold);';
+  }else if(pct>=50){
+    trophy='⛪';title='¡Buen aprendiz!';
+    rank='APRENDIZ DE TALLER';
+    rnkStyle='background:var(--got);color:var(--got3);border:2px solid var(--got2);';
+  }else{
+    trophy='📜';title='Sigue estudiando el arte medieval';
+    rank='PEREGRINO CURIOSO';
+    rnkStyle='background:var(--panel2);color:var(--text2);border:1px solid var(--border);';
+  }
+  document.getElementById('ftrophy').textContent=trophy;
+  document.getElementById('ftitle').textContent=title;
+  document.getElementById('frnk').textContent=rank;
+  document.getElementById('frnk').style.cssText=rnkStyle;
+  showS('s-final');
+}
+
+function launchConfetti(){
+  const cols=['#d4a820','#c03010','#2050c0','#f0c840','#ff7050','#70a0ff'];
+  for(let i=0;i<60;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');p.className='confetti-p';
+      p.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${cols[Math.floor(Math.random()*6)]};transform:rotate(${Math.random()*360}deg);animation-delay:${Math.random()*.6}s;`;
+      document.body.appendChild(p);setTimeout(()=>p.remove(),2200);
+    },i*20);
+  }
+}
+
+function restartGame(){
+  score=0;okCount=0;koCount=0;
+  remaining=[];answered=[];currentQ=null;spinning=false;
+  wheelAngle=0;
+  document.getElementById('history').innerHTML='';
+  updateStats();
+  showS('s-intro');
+}
+
+function showS(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// Dibujar ruleta al inicio
+window.addEventListener('load',()=>drawWheel());
+</script>
+</body>
+</html>
