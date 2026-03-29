@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>La Biblioteca de Córdoba — Escape Room</title>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sand:#1a1408; --sand2:#2a2010; --sand3:#3d3018;
+  --terracota:#8b3a00; --terra2:#c45a10; --terra3:#f08030;
+  --turq:#0a3d3a; --turq2:#0f6060; --turq3:#20c0a0;
+  --gold:#c8960a; --gold2:#e8b820; --gold3:#fff0a0;
+  --parch:#f5ead0; --parch2:#e8d8a8; --parch3:#d4c080;
+  --ink:#1a1408; --ink2:#3a2808;
+  --emerald:#0a4020; --em2:#148040; --em3:#30d060;
+  --ruby:#6a0a0a; --ru2:#b01818; --ru3:#ff4040;
+  --lapis:#0a1860; --lap2:#1830a0; --lap3:#4060ff;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+
+body{
+  background:var(--sand);
+  font-family:'Crimson Text',serif;
+  min-height:100vh;overflow-x:hidden;
+  background-image:
+    radial-gradient(ellipse at 15% 85%, rgba(139,58,0,.3) 0%, transparent 50%),
+    radial-gradient(ellipse at 85% 15%, rgba(10,61,58,.25) 0%, transparent 50%),
+    repeating-linear-gradient(30deg,transparent,transparent 50px,rgba(200,150,10,.03) 50px,rgba(200,150,10,.03) 51px),
+    repeating-linear-gradient(-30deg,transparent,transparent 50px,rgba(200,150,10,.02) 50px,rgba(200,150,10,.02) 51px);
+}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:14px 13px 40px;}
+.screen.active{display:flex;}
+
+/* HEADER */
+.ghdr{width:100%;max-width:640px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.pbar{flex:1;height:10px;background:var(--sand3);border-radius:5px;margin:0 10px;overflow:hidden;border:1px solid var(--terracota);}
+.pfill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--terracota),var(--gold2));transition:width .6s ease;}
+.slbl{font-family:'Cinzel',serif;font-size:11px;color:var(--terra3);letter-spacing:1px;white-space:nowrap;}
+
+/* CARD */
+.card{
+  background:linear-gradient(160deg,rgba(42,32,16,.95),rgba(26,20,8,.98));
+  border-radius:14px;
+  border:2px solid var(--terracota);
+  box-shadow:0 8px 40px rgba(0,0,0,.7), inset 0 1px 0 rgba(200,150,10,.1);
+  padding:22px 18px;width:100%;max-width:640px;
+  position:relative;overflow:hidden;
+}
+.card::before{
+  content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(
+    45deg,transparent,transparent 20px,
+    rgba(200,150,10,.02) 20px,rgba(200,150,10,.02) 21px
+  );pointer-events:none;
+}
+.card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,transparent,var(--terra2),var(--gold2),var(--terra2),transparent);
+}
+
+/* ORNAMENTO árabe SVG */
+.ornament{text-align:center;font-size:22px;color:var(--gold);opacity:.5;margin:8px 0;letter-spacing:12px;}
+
+/* TIPOS */
+.gtitle{
+  font-family:'Amiri',serif;
+  font-size:clamp(22px,5.5vw,34px);font-weight:700;
+  color:var(--gold2);text-align:center;
+  text-shadow:0 0 20px rgba(200,150,10,.4);
+  line-height:1.2;margin-bottom:4px;
+}
+.gsubtitle{font-family:'Cinzel',serif;font-size:clamp(10px,2.5vw,13px);color:var(--terra3);text-align:center;letter-spacing:2px;margin-bottom:14px;}
+.ptitle{font-family:'Amiri',serif;font-size:clamp(17px,4vw,24px);font-weight:700;color:var(--gold2);text-align:center;margin-bottom:4px;}
+.pnum{font-family:'Cinzel',serif;font-size:11px;color:var(--terra3);text-align:center;letter-spacing:2px;margin-bottom:14px;}
+.narrative{font-size:clamp(13px,3vw,15px);color:var(--parch2);line-height:1.65;text-align:center;margin-bottom:16px;font-style:italic;}
+.tip{background:rgba(200,150,10,.1);border-left:3px solid var(--gold);border-radius:0 8px 8px 0;padding:9px 13px;margin-bottom:14px;font-size:clamp(12px,2.8vw,14px);color:var(--parch2);}
+
+/* BTN */
+.btn{display:block;width:100%;padding:13px 18px;border-radius:10px;font-family:'Cinzel',serif;font-size:clamp(13px,3vw,16px);font-weight:700;cursor:pointer;text-align:center;transition:all .2s;letter-spacing:.5px;margin-top:14px;}
+.btn-terra{background:linear-gradient(135deg,var(--terracota),var(--terra2),var(--terracota));border:2px solid var(--terra2);color:var(--gold3);box-shadow:0 4px 16px rgba(139,58,0,.4);}
+.btn-terra:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(139,58,0,.6);}
+.btn-terra:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+.btn-turq{background:linear-gradient(135deg,var(--turq),var(--turq2),var(--turq));border:2px solid var(--turq2);color:var(--turq3);box-shadow:0 4px 16px rgba(10,61,58,.4);display:none;}
+.btn-turq:hover{transform:translateY(-2px);}
+
+/* FEEDBACK */
+.fb{text-align:center;padding:10px 14px;border-radius:8px;margin-top:12px;font-family:'Cinzel',serif;font-size:13px;font-weight:700;display:none;}
+.fb.ok{background:rgba(20,128,64,.2);border:2px solid var(--em2);color:var(--em3);display:block;}
+.fb.ko{background:rgba(176,24,24,.2);border:2px solid var(--ru2);color:var(--ru3);display:block;}
+
+/* ── P1: MATCHING MEDINA ────────────────────────── */
+.medina-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.med-col{display:flex;flex-direction:column;gap:7px;}
+.med-item{padding:10px 12px;border-radius:9px;font-size:clamp(11px,2.6vw,13px);cursor:pointer;transition:all .2s;text-align:center;min-height:54px;display:flex;align-items:center;justify-content:center;line-height:1.3;font-weight:600;}
+.med-left{background:rgba(139,58,0,.3);border:2px solid var(--terracota);color:var(--terra3);font-family:'Amiri',serif;font-size:clamp(12px,2.8vw,15px);}
+.med-right{background:rgba(200,150,10,.08);border:2px solid rgba(200,150,10,.3);color:var(--parch2);font-style:italic;font-size:clamp(11px,2.6vw,13px);}
+.med-item.sel{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(200,150,10,.3);transform:scale(1.03);}
+.med-item.mok{border-color:var(--em2);background:rgba(20,128,64,.2);color:var(--em3);cursor:default;}
+.med-item.mko{border-color:var(--ru2);background:rgba(176,24,24,.2);color:var(--ru3);}
+.mscore{text-align:center;font-family:'Cinzel',serif;font-size:12px;color:var(--gold);margin-bottom:8px;}
+
+/* ── P2: PALABRAS ÁRABES ────────────────────────── */
+.word-bank{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:14px;}
+.word-chip{
+  padding:8px 14px;background:rgba(10,61,58,.4);
+  border:2px solid var(--turq2);border-radius:20px;
+  font-family:'Amiri',serif;font-size:clamp(13px,3vw,16px);font-weight:700;
+  color:var(--turq3);cursor:pointer;transition:all .2s;
+  user-select:none;touch-action:none;
+}
+.word-chip:hover:not(.used){border-color:var(--turq3);transform:scale(1.05);}
+.word-chip.used{opacity:.25;pointer-events:none;}
+.word-chip.selected{border-color:var(--gold2);color:var(--gold2);box-shadow:0 0 0 3px rgba(200,150,10,.3);}
+
+.obj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;}
+.obj-card{
+  background:rgba(42,32,16,.8);border:2px solid rgba(200,150,10,.2);
+  border-radius:10px;padding:12px 8px;text-align:center;
+  cursor:pointer;transition:all .2s;min-height:90px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+}
+.obj-card:hover:not(.filled){border-color:var(--gold);background:rgba(200,150,10,.08);}
+.obj-card.filled{border-color:var(--em2);background:rgba(20,128,64,.15);cursor:default;}
+.obj-card.wrong-flash{animation:wrongflash .4s ease;}
+.obj-emoji{font-size:clamp(24px,6vw,32px);margin-bottom:6px;}
+.obj-line{width:80%;height:2px;background:rgba(200,150,10,.3);border-radius:1px;margin:4px auto 2px;}
+.obj-answer{font-family:'Amiri',serif;font-size:clamp(12px,2.8vw,14px);color:var(--em3);font-weight:700;min-height:20px;}
+
+/* ── P3: PREGUNTAS ──────────────────────────────── */
+.qblock{background:rgba(10,24,8,.6);border:2px solid rgba(200,150,10,.2);border-radius:10px;padding:14px;margin-bottom:11px;}
+.qtext{color:var(--parch);font-size:clamp(13px,3vw,15px);line-height:1.65;margin-bottom:11px;font-weight:600;}
+.qtext strong{color:var(--gold2);}
+.qopts{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.qbtn{
+  padding:11px 8px;background:rgba(42,32,16,.8);border:2px solid rgba(200,150,10,.2);
+  border-radius:8px;font-family:'Crimson Text',serif;font-size:clamp(12px,2.8vw,14px);
+  color:var(--parch2);cursor:pointer;transition:all .2s;text-align:left;
+  display:flex;align-items:flex-start;gap:6px;line-height:1.3;
+}
+.qbtn .ql{font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--gold);min-width:16px;}
+.qbtn:hover:not(:disabled){border-color:var(--gold);color:var(--parch);}
+.qbtn.qok{background:rgba(20,128,64,.2);border-color:var(--em2);color:var(--em3);}
+.qbtn.qko{background:rgba(176,24,24,.2);border-color:var(--ru2);color:var(--ru3);}
+.qprog{text-align:center;font-family:'Cinzel',serif;font-size:12px;color:var(--gold);margin-bottom:10px;}
+
+/* ── P4: CÓRDOBA 950 ────────────────────────────── */
+.cordoba-stats{
+  background:rgba(10,24,8,.6);border:2px solid var(--gold);
+  border-radius:10px;padding:12px;margin-bottom:12px;text-align:center;
+}
+.cstat{display:inline-flex;align-items:center;gap:5px;margin:3px 8px;}
+.cstat-lbl{font-family:'Cinzel',serif;font-size:10px;color:var(--gold);}
+.cbar{display:flex;gap:3px;margin-top:2px;}
+.cseg{width:16px;height:9px;border-radius:2px;background:rgba(200,150,10,.15);transition:background .4s;}
+.cseg.on{background:var(--gold2);}
+
+.scen-box{background:rgba(10,24,8,.5);border:1px solid rgba(200,150,10,.2);border-radius:10px;padding:15px;margin-bottom:12px;}
+.scen-icon{font-size:34px;text-align:center;margin-bottom:7px;}
+.scen-text{font-size:clamp(13px,3vw,15px);color:var(--parch2);line-height:1.65;text-align:center;margin-bottom:13px;}
+.scen-choices{display:flex;flex-direction:column;gap:7px;}
+.cho-btn{
+  padding:11px 14px;background:rgba(42,32,16,.9);border:2px solid rgba(200,150,10,.2);
+  border-radius:8px;font-size:clamp(12px,2.8vw,14px);color:var(--parch2);
+  cursor:pointer;transition:all .2s;text-align:left;line-height:1.4;
+  font-family:'Crimson Text',serif;
+}
+.cho-btn:hover:not(:disabled){border-color:var(--gold);color:var(--parch);transform:translateX(4px);}
+.cho-btn.cgood{background:rgba(20,128,64,.2);border-color:var(--em2);color:var(--em3);}
+.cho-btn.cbad{background:rgba(176,24,24,.2);border-color:var(--ru2);color:var(--ru3);}
+.cons-box{background:rgba(200,150,10,.1);border:1px solid rgba(200,150,10,.3);border-radius:8px;padding:11px;margin-top:9px;font-size:clamp(12px,2.8vw,14px);color:var(--parch2);line-height:1.5;display:none;}
+.cons-box.show{display:block;}
+.scen-ctr{font-family:'Cinzel',serif;font-size:11px;color:var(--gold);text-align:center;letter-spacing:1px;margin-bottom:9px;}
+
+/* FINAL */
+.ftrophy{font-size:clamp(56px,14vw,80px);text-align:center;margin-bottom:8px;line-height:1;}
+.ftitle{font-family:'Amiri',serif;font-size:clamp(20px,5vw,30px);font-weight:700;color:var(--gold2);text-align:center;margin-bottom:6px;}
+.fscore{font-family:'Cinzel',serif;font-size:clamp(38px,10vw,58px);font-weight:900;background:linear-gradient(135deg,var(--gold),var(--gold3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;line-height:1;}
+.flabel{font-family:'Cinzel',serif;font-size:12px;color:var(--terra3);letter-spacing:2px;text-align:center;margin-bottom:12px;}
+.bdown{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0;}
+.bitem{background:rgba(42,32,16,.8);border:1px solid rgba(200,150,10,.2);border-radius:9px;padding:10px 6px;text-align:center;}
+.bnum{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:var(--gold2);}
+.blbl{font-family:'Cinzel',serif;font-size:8px;color:var(--terra3);margin-top:3px;letter-spacing:.5px;}
+.certbox{background:rgba(10,24,8,.6);border:1px solid rgba(200,150,10,.3);border-radius:10px;padding:15px;margin:12px 0;text-align:center;}
+.certbox p{color:var(--parch2);font-size:14px;line-height:1.7;}
+.cname{font-family:'Amiri',serif;font-size:17px;color:var(--gold2);border-bottom:1px solid rgba(200,150,10,.3);margin:6px 20px;padding-bottom:6px;}
+.rnkbadge{display:inline-block;padding:8px 18px;border-radius:20px;font-family:'Cinzel',serif;font-size:12px;font-weight:700;margin:10px 0;}
+.stars{font-size:36px;text-align:center;letter-spacing:8px;margin:10px 0;}
+
+/* ANIMACIONES */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes wrongflash{0%,100%{background:rgba(42,32,16,.8)}50%{background:rgba(176,24,24,.3)}}
+@keyframes shimmer{0%{opacity:.3}50%{opacity:.7}100%{opacity:.3}}
+@keyframes confetti{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(100px) rotate(720deg);opacity:0}}
+.anim{animation:fadeUp .35s ease forwards;}
+.confetti-p{position:fixed;width:7px;height:7px;border-radius:2px;animation:confetti 1.5s ease forwards;pointer-events:none;z-index:999;}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--sand2);}
+::-webkit-scrollbar-thumb{background:var(--terracota);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ INTRO -->
+<div class="screen active" id="s-intro">
+  <div class="card anim" style="margin-top:20px;text-align:center;max-width:580px;">
+    <div style="font-size:clamp(48px,12vw,70px);margin-bottom:6px;">🕌</div>
+    <div class="gtitle">La Biblioteca<br>de Córdoba</div>
+    <div class="gsubtitle">ESCAPE ROOM · SESIÓN 7 · LEGADO ÁRABE</div>
+    <div class="ornament">❧ ✦ ❧</div>
+    <p class="narrative">
+      Año 950. Has llegado a Córdoba, la ciudad más culta del mundo.<br>
+      La gran biblioteca de Al-Hakam II guarda 400.000 libros.<br>
+      Para entrar debes demostrar tu sabiduría superando <strong style="color:var(--gold2)">4 pruebas</strong>.
+    </p>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0;">
+      <div style="text-align:center;"><div style="font-size:22px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--terra3);margin-top:3px;">LA MEDINA</div></div>
+      <div style="text-align:center;"><div style="font-size:22px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--terra3);margin-top:3px;">PALABRAS</div></div>
+      <div style="text-align:center;"><div style="font-size:22px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--terra3);margin-top:3px;">LEGADO</div></div>
+      <div style="text-align:center;"><div style="font-size:22px;">🔒</div><div style="font-family:'Cinzel',serif;font-size:9px;color:var(--terra3);margin-top:3px;">ERUDITO</div></div>
+    </div>
+    <div class="ornament">❧ ✦ ❧</div>
+    <input type="text" id="pname" placeholder="Escribe tu nombre, viajero..."
+      style="width:100%;padding:12px 16px;background:rgba(255,255,255,.06);border:2px solid var(--terracota);border-radius:10px;font-family:'Amiri',serif;font-size:17px;color:var(--parch);text-align:center;margin-bottom:4px;"
+      oninput="checkName()">
+    <button class="btn btn-terra" id="sbtn" onclick="startGame()" disabled>🕌 Entrar en Córdoba</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PUZZLE 1: MEDINA -->
+<div class="screen" id="s-p1">
+  <div class="ghdr" style="max-width:640px;width:100%;">
+    <span class="slbl">1/4</span>
+    <div class="pbar"><div class="pfill" style="width:0%"></div></div>
+    <span class="slbl" id="sc1">0 pts</span>
+  </div>
+  <div class="card anim">
+    <div class="pnum">🔐 PRUEBA 1 — LOS EDIFICIOS DE LA MEDINA</div>
+    <div class="ptitle">¿Para qué sirve cada lugar?</div>
+    <div class="tip">📌 Toca el nombre del edificio y luego su función para unirlos.</div>
+    <div class="mscore" id="ms1">Emparejados: 0 / 6</div>
+    <div class="medina-grid">
+      <div class="med-col" id="mleft">
+        <div class="med-item med-left" data-id="mezquita" onclick="selL(this)">🕌 Mezquita</div>
+        <div class="med-item med-left" data-id="zoco" onclick="selL(this)">🏪 Zoco</div>
+        <div class="med-item med-left" data-id="hammam" onclick="selL(this)">♨️ Hammam</div>
+        <div class="med-item med-left" data-id="madrasa" onclick="selL(this)">📚 Madrasa</div>
+        <div class="med-item med-left" data-id="alcazar" onclick="selL(this)">🏰 Alcázar</div>
+        <div class="med-item med-left" data-id="biblioteca" onclick="selL(this)">📖 Biblioteca</div>
+      </div>
+      <div class="med-col" id="mright">
+        <div class="med-item med-right" data-m="biblioteca" onclick="selR(this)">Guardaba el saber: 400.000 libros</div>
+        <div class="med-item med-right" data-m="mezquita" onclick="selR(this)">Lugar de oración y rezo</div>
+        <div class="med-item med-right" data-m="alcazar" onclick="selR(this)">Palacio y fortaleza del gobernador</div>
+        <div class="med-item med-right" data-m="hammam" onclick="selR(this)">Baño público, higiene y reunión social</div>
+        <div class="med-item med-right" data-m="zoco" onclick="selR(this)">Mercado donde se vendían especias y telas</div>
+        <div class="med-item med-right" data-m="madrasa" onclick="selR(this)">Escuela donde se estudiaba el Corán y ciencias</div>
+      </div>
+    </div>
+    <div class="fb" id="fb1"></div>
+    <button class="btn btn-turq" id="np1" onclick="goP2()">🗝️ ¡Siguiente prueba!</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PUZZLE 2: PALABRAS ÁRABES -->
+<div class="screen" id="s-p2">
+  <div class="ghdr" style="max-width:640px;width:100%;">
+    <span class="slbl">2/4</span>
+    <div class="pbar"><div class="pfill" style="width:25%"></div></div>
+    <span class="slbl" id="sc2">0 pts</span>
+  </div>
+  <div class="card anim">
+    <div class="pnum">🔐 PRUEBA 2 — EL MERCADO DE PALABRAS</div>
+    <div class="ptitle">Descifra el origen árabe</div>
+    <div class="tip">📌 Toca una palabra árabe del banco y luego el objeto al que corresponde.</div>
+    <div class="word-bank" id="wbank">
+      <div class="word-chip" data-w="Almohada" onclick="selWordChip(this)">Almohada</div>
+      <div class="word-chip" data-w="Azulejo" onclick="selWordChip(this)">Azulejo</div>
+      <div class="word-chip" data-w="Café" onclick="selWordChip(this)">Café</div>
+      <div class="word-chip" data-w="Álgebra" onclick="selWordChip(this)">Álgebra</div>
+      <div class="word-chip" data-w="Noria" onclick="selWordChip(this)">Noria</div>
+      <div class="word-chip" data-w="Azúcar" onclick="selWordChip(this)">Azúcar</div>
+      <div class="word-chip" data-w="Alfombra" onclick="selWordChip(this)">Alfombra</div>
+      <div class="word-chip" data-w="Aceite" onclick="selWordChip(this)">Aceite</div>
+    </div>
+    <div class="obj-grid" id="ogrid">
+      <div class="obj-card" data-ans="Almohada" onclick="tryMatch(this)">
+        <div class="obj-emoji">🛏️</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa0"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">cojín para dormir</div>
+      </div>
+      <div class="obj-card" data-ans="Azulejo" onclick="tryMatch(this)">
+        <div class="obj-emoji">🔷</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa1"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">baldosa cerámica</div>
+      </div>
+      <div class="obj-card" data-ans="Café" onclick="tryMatch(this)">
+        <div class="obj-emoji">☕</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa2"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">bebida caliente</div>
+      </div>
+      <div class="obj-card" data-ans="Álgebra" onclick="tryMatch(this)">
+        <div class="obj-emoji">➕</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa3"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">rama matemática</div>
+      </div>
+      <div class="obj-card" data-ans="Noria" onclick="tryMatch(this)">
+        <div class="obj-emoji">⚙️</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa4"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">rueda de agua</div>
+      </div>
+      <div class="obj-card" data-ans="Azúcar" onclick="tryMatch(this)">
+        <div class="obj-emoji">🍬</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa5"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">sustancia dulce</div>
+      </div>
+      <div class="obj-card" data-ans="Alfombra" onclick="tryMatch(this)">
+        <div class="obj-emoji">🪄</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa6"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">tejido del suelo</div>
+      </div>
+      <div class="obj-card" data-ans="Aceite" onclick="tryMatch(this)">
+        <div class="obj-emoji">🫒</div>
+        <div class="obj-line"></div>
+        <div class="obj-answer" id="oa7"></div>
+        <div style="font-size:10px;color:var(--parch3);font-style:italic;">líquido del olivo</div>
+      </div>
+    </div>
+    <div class="fb" id="fb2"></div>
+    <button class="btn btn-turq" id="np2" onclick="goP3()">🗝️ ¡Siguiente prueba!</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PUZZLE 3: PREGUNTAS -->
+<div class="screen" id="s-p3">
+  <div class="ghdr" style="max-width:640px;width:100%;">
+    <span class="slbl">3/4</span>
+    <div class="pbar"><div class="pfill" style="width:50%"></div></div>
+    <span class="slbl" id="sc3">0 pts</span>
+  </div>
+  <div class="card anim">
+    <div class="pnum">🔐 PRUEBA 3 — EL LEGADO QUE NOS DEJARON</div>
+    <div class="ptitle">6 preguntas sobre la herencia árabe</div>
+    <div class="tip">📌 Responde las 6 preguntas. Cada respuesta explica el porqué.</div>
+    <div class="qprog" id="qprog">Respondidas: 0 / 6</div>
+    <div id="qcont"></div>
+    <div class="fb" id="fb3"></div>
+    <button class="btn btn-turq" id="np3" onclick="goP4()">🗝️ ¡Última prueba!</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ PUZZLE 4: CÓRDOBA 950 -->
+<div class="screen" id="s-p4">
+  <div class="ghdr" style="max-width:640px;width:100%;">
+    <span class="slbl">4/4</span>
+    <div class="pbar"><div class="pfill" style="width:75%"></div></div>
+    <span class="slbl" id="sc4">0 pts</span>
+  </div>
+  <div class="card anim">
+    <div class="pnum">🔐 PRUEBA FINAL — VIVE EN CÓRDOBA, AÑO 950</div>
+    <div class="ptitle">El reto del erudito</div>
+    <div class="tip">📌 Toma 5 decisiones como habitante de Córdoba. ¿Qué harías tú?</div>
+    <div class="cordoba-stats">
+      <div style="font-family:'Cinzel',serif;font-size:11px;color:var(--gold);margin-bottom:8px;letter-spacing:1px;">TU VIDA EN CÓRDOBA</div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;">
+        <div class="cstat"><span style="font-size:17px;">📚</span><div><div class="cstat-lbl">SABER</div><div class="cbar" id="bar-saber"><div class="cseg on"></div><div class="cseg on"></div><div class="cseg on"></div><div class="cseg"></div><div class="cseg"></div></div></div></div>
+        <div class="cstat"><span style="font-size:17px;">🤝</span><div><div class="cstat-lbl">CONVIVENCIA</div><div class="cbar" id="bar-conv"><div class="cseg on"></div><div class="cseg on"></div><div class="cseg on"></div><div class="cseg"></div><div class="cseg"></div></div></div></div>
+        <div class="cstat"><span style="font-size:17px;">🌟</span><div><div class="cstat-lbl">REPUTACIÓN</div><div class="cbar" id="bar-rep"><div class="cseg on"></div><div class="cseg on"></div><div class="cseg on"></div><div class="cseg"></div><div class="cseg"></div></div></div></div>
+      </div>
+    </div>
+    <div class="scen-ctr" id="sctr">Situación 1 de 5</div>
+    <div class="scen-box" id="sbox"></div>
+    <div class="fb" id="fb4"></div>
+    <button class="btn btn-turq" id="snext" onclick="nextScen()" style="display:none;">➡️ Siguiente situación</button>
+    <button class="btn btn-terra" id="sfinish" onclick="finishGame()" style="display:none;">🏛️ ¡Entrar en la biblioteca!</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ FINAL -->
+<div class="screen" id="s-final">
+  <div class="card anim" style="margin-top:20px;max-width:580px;text-align:center;">
+    <div class="ftrophy" id="ftrophy">📖</div>
+    <div class="ftitle" id="ftitle">¡Has entrado en la biblioteca!</div>
+    <div class="ornament">❧ ✦ ❧</div>
+    <div class="stars" id="fstars">⭐⭐⭐</div>
+    <div class="fscore" id="fscore">0</div>
+    <div class="flabel">PUNTOS DE SABIDURÍA</div>
+    <div class="bdown">
+      <div class="bitem"><div class="bnum" id="b1">0</div><div class="blbl">MEDINA</div></div>
+      <div class="bitem"><div class="bnum" id="b2">0</div><div class="blbl">PALABRAS</div></div>
+      <div class="bitem"><div class="bnum" id="b3">0</div><div class="blbl">LEGADO</div></div>
+      <div class="bitem"><div class="bnum" id="b4">0</div><div class="blbl">ERUDITO</div></div>
+    </div>
+    <div class="rnkbadge" id="rnk">—</div>
+    <div class="certbox">
+      <p>Al-Hakam II otorga acceso a la biblioteca a</p>
+      <div class="cname" id="cname">—</div>
+      <p>por demostrar conocimiento sobre la medina de Córdoba<br>y el legado árabe en nuestra civilización.</p>
+    </div>
+    <div class="ornament">❧ ✦ ❧</div>
+    <button class="btn btn-terra" onclick="restartGame()" style="margin-top:4px;">🔄 Volver a Córdoba</button>
+  </div>
+</div>
+
+<script>
+// ── DATOS ─────────────────────────────────────────────────────────────────────
+const QDATA=[
+  {q:"¿Cuántos libros tenía la biblioteca de Córdoba en el siglo X?",opts:["400","4.000","40.000","400.000"],c:3,exp:"¡400.000 libros! Era la más grande del mundo. La mayor biblioteca cristiana apenas tenía 400."},
+  {q:"La palabra '<strong>alcázar</strong>' viene del árabe 'al-qasr'. ¿Qué significa?",opts:["El mercado","El palacio o fortaleza","La escuela","El baño"],c:1,exp:"Al-qasr significa palacio o fortaleza. El Alcázar de Sevilla y el de Toledo son ejemplos famosos."},
+  {q:"¿Qué ciencia árabe usamos hoy en matemáticas con ecuaciones como x+2=5?",opts:["Geometría","Aritmética","Álgebra","Trigonometría"],c:2,exp:"El álgebra (del árabe 'al-yabr') fue desarrollada por Al-Khwarizmi en el siglo IX en Córdoba."},
+  {q:"¿Por qué las calles de la medina eran tan estrechas y tortuosas?",opts:["Para que los carros no entraran","Para dar sombra y frescor en el calor","Por falta de espacio","Por tradición religiosa"],c:1,exp:"Las calles estrechas daban sombra en verano. Era una solución arquitectónica brillante adaptada al clima mediterráneo."},
+  {q:"¿Qué era el 'hammam'?",opts:["El palacio del califa","El baño público musulmán","La torre de la mezquita","El almacén del zoco"],c:1,exp:"El hammam (del árabe 'el que calienta') era el baño público. Había cientos en Córdoba. La higiene era fundamental en la cultura islámica."},
+  {q:"¿Cuántos años vivieron juntos cristianos, musulmanes y judíos en la Península?",opts:["100 años","300 años","500 años","800 años"],c:3,exp:"¡800 años! Del 711 al 1492. Por eso el español tiene más de 4.000 palabras de origen árabe."},
+];
+
+const SCENARIOS=[
+  {icon:"🏫",text:"Llegas a Córdoba desde un pueblo cristiano. Un erudito árabe te ofrece enseñarte matemáticas y astronomía. Algunos en tu pueblo dicen que no deberías aprender de 'infieles'. ¿Qué haces?",
+   choices:[
+    {t:"Aceptas estudiar con él. El saber no tiene religión.",good:true,fx:{saber:2,conv:1,rep:1},cons:"✅ Excelente. Gracias a esta actitud, muchos sabios medievales transmitieron el conocimiento árabe a Europa."},
+    {t:"Rechazas por miedo a lo que digan en tu pueblo.",good:false,fx:{saber:-1,conv:0,rep:-1},cons:"❌ El miedo al diferente frenó el progreso. Muchos europeos tardaron siglos en acceder al saber árabe."},
+   ]},
+  {icon:"🕌",text:"Es la hora de la oración y los musulmanes del zoco se detienen a rezar. Tú, cristiano, tienes prisa para cerrar un trato comercial. ¿Qué haces?",
+   choices:[
+    {t:"Esperas con respeto. El trato puede esperar unos minutos.",good:true,fx:{saber:0,conv:2,rep:1},cons:"✅ El respeto mutuo fue clave en la convivencia de Al-Ándalus. Los comerciantes de distintas religiones trabajaban juntos."},
+    {t:"Protestas en voz alta y exiges continuar.",good:false,fx:{saber:0,conv:-2,rep:-1},cons:"❌ La falta de respeto rompía la convivencia. Los mercaderes que respetaban las costumbres locales eran más exitosos."},
+   ]},
+  {icon:"📜",text:"Encuentras un manuscrito árabe con conocimientos de medicina. Nadie en tu ciudad cristiana sabe árabe. ¿Qué haces?",
+   choices:[
+    {t:"Buscas un traductor judío que sepa árabe y latín para traducirlo.",good:true,fx:{saber:2,conv:1,rep:2},cons:"✅ ¡Así fue en la historia! La Escuela de Traductores de Toledo tradujo cientos de textos árabes al latín."},
+    {t:"Lo abandonas. No puedes leerlo y no sirve de nada.",good:false,fx:{saber:-1,conv:0,rep:0},cons:"❌ Muchos conocimientos se perdieron así. Los que tradujeron los textos árabes transformaron la medicina europea."},
+   ]},
+  {icon:"🎭",text:"En el zoco de Córdoba, un poeta árabe recita versos sobre el amor y la naturaleza. El tema te parece hermoso aunque no entiendes todo. ¿Qué haces?",
+   choices:[
+    {t:"Te quedas a escuchar y aplaudir. La belleza no necesita traducción.",good:true,fx:{saber:0,conv:2,rep:1},cons:"✅ La poesía árabe influyó en los trovadores medievales y en el origen de la lírica europea moderna."},
+    {t:"Te vas. No entiendes el idioma y no te interesa.",good:false,fx:{saber:0,conv:-1,rep:0},cons:"❌ El arte y la poesía árabe enriquecieron enormemente la cultura europea. Ignorarlos fue una gran pérdida."},
+   ]},
+  {icon:"💧",text:"Los ingenieros árabes proponen construir una noria y un sistema de acequias para regar los campos del valle. El proyecto es caro. ¿Apoyas la idea?",
+   choices:[
+    {t:"Sí. La tecnología árabe puede multiplicar la cosecha.",good:true,fx:{saber:1,conv:1,rep:2},cons:"✅ Las norias y acequias árabes transformaron la agricultura española. Valencia, Murcia y Andalucía son fértiles gracias a ellas."},
+    {t:"No. Es demasiado dinero y no confías en la técnica árabe.",good:false,fx:{saber:0,conv:-1,rep:-1},cons:"❌ Los que rechazaron la tecnología árabe mantuvieron campos secos. Los que la adoptaron prosperaron."},
+   ]},
+];
+
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+let pname='',score=0,s1=0,s2=0,s3=0,s4=0;
+let selLeft=null,matched1=0;
+let selectedWordChip=null,matched2=0;
+let qAnswered=0;
+let scIdx=0,scDone=false;
+let cstats={saber:3,conv:3,rep:3};
+
+// ── INTRO ─────────────────────────────────────────────────────────────────────
+function checkName(){document.getElementById('sbtn').disabled=document.getElementById('pname').value.trim().length<2;}
+function startGame(){pname=document.getElementById('pname').value.trim();showS('s-p1');}
+
+// ── P1: MATCHING MEDINA ───────────────────────────────────────────────────────
+function selL(el){
+  if(el.classList.contains('mok'))return;
+  document.querySelectorAll('.med-left.sel').forEach(e=>e.classList.remove('sel'));
+  selLeft=el;el.classList.add('sel');
+}
+function selR(el){
+  if(!selLeft||el.classList.contains('mok'))return;
+  if(selLeft.dataset.id===el.dataset.m){
+    selLeft.classList.remove('sel');selLeft.classList.add('mok');el.classList.add('mok');
+    matched1++;s1+=50;score+=50;updSc();
+    document.getElementById('ms1').textContent=`Emparejados: ${matched1} / 6`;
+    if(matched1===6){
+      document.getElementById('fb1').className='fb ok';
+      document.getElementById('fb1').textContent='✅ ¡Conoces bien la medina! Has superado la primera prueba.';
+      document.getElementById('np1').style.display='block';
+      buildP3();
+    }
+  }else{
+    selLeft.classList.remove('sel');
+    el.classList.add('mko');setTimeout(()=>el.classList.remove('mko'),400);
+  }
+  selLeft=null;
+}
+
+// ── P2: PALABRAS ÁRABES ───────────────────────────────────────────────────────
+function selWordChip(el){
+  if(el.classList.contains('used'))return;
+  document.querySelectorAll('.word-chip.selected').forEach(e=>e.classList.remove('selected'));
+  selectedWordChip=el;el.classList.add('selected');
+}
+function tryMatch(card){
+  if(!selectedWordChip||card.classList.contains('filled'))return;
+  const word=selectedWordChip.dataset.w;
+  const ans=card.dataset.ans;
+  if(word===ans){
+    card.classList.add('filled');
+    const idx=Array.from(document.querySelectorAll('.obj-card')).indexOf(card);
+    document.getElementById('oa'+idx).textContent=word;
+    selectedWordChip.classList.add('used');selectedWordChip.classList.remove('selected');
+    selectedWordChip=null;
+    matched2++;s2+=37;score+=37;updSc();
+    if(matched2===8){
+      document.getElementById('fb2').className='fb ok';
+      document.getElementById('fb2').textContent='✅ ¡Perfecto! Has identificado todas las palabras de origen árabe.';
+      document.getElementById('np2').style.display='block';
+    }
+  }else{
+    card.classList.add('wrong-flash');setTimeout(()=>card.classList.remove('wrong-flash'),400);
+    selectedWordChip.classList.remove('selected');selectedWordChip=null;
+  }
+}
+
+// ── P3: PREGUNTAS ─────────────────────────────────────────────────────────────
+function buildP3(){
+  const c=document.getElementById('qcont');c.innerHTML='';
+  QDATA.forEach((q,i)=>{
+    const b=document.createElement('div');b.className='qblock';
+    b.innerHTML=`<p class="qtext"><strong>${i+1}.</strong> ${q.q}</p>
+      <div class="qopts">${q.opts.map((o,j)=>`<button class="qbtn" onclick="ansQ(${i},${j},this)"><span class="ql">${['A','B','C','D'][j]}</span><span>${o}</span></button>`).join('')}</div>`;
+    c.appendChild(b);
+  });
+}
+function goP2(){showS('s-p2');}
+function goP3(){showS('s-p3');}
+function ansQ(qi,ai,btn){
+  if(btn.disabled)return;
+  const q=QDATA[qi];const ok=ai===q.c;
+  btn.classList.add(ok?'qok':'qko');
+  document.querySelectorAll(`#qcont .qblock:nth-child(${qi+1}) .qbtn`).forEach((b,j)=>{
+    b.disabled=true;if(j===q.c&&!ok)b.classList.add('qok');
+  });
+  if(ok){s3+=80;score+=80;updSc();}
+  qAnswered++;
+  document.getElementById('qprog').textContent=`Respondidas: ${qAnswered} / 6`;
+  // Mostrar explicación
+  const exp=document.createElement('div');
+  exp.style.cssText='margin-top:8px;padding:8px 10px;background:rgba(200,150,10,.08);border-left:2px solid var(--gold);border-radius:0 6px 6px 0;font-size:13px;color:var(--parch2);font-style:italic;';
+  exp.textContent=q.exp;
+  document.querySelectorAll('#qcont .qblock')[qi].appendChild(exp);
+  if(qAnswered===6){
+    document.getElementById('fb3').className='fb ok';
+    document.getElementById('fb3').textContent=`✅ ¡Has completado el legado! Respuestas correctas: ${Math.round(s3/80)}/6`;
+    document.getElementById('np3').style.display='block';
+    buildP4();
+  }
+}
+
+// ── P4: CÓRDOBA 950 ───────────────────────────────────────────────────────────
+function buildP4(){scIdx=0;renderScen();}
+function goP4(){showS('s-p4');}
+
+function renderScen(){
+  const sc=SCENARIOS[scIdx];
+  document.getElementById('sctr').textContent=`Situación ${scIdx+1} de 5`;
+  document.getElementById('fb4').className='fb';
+  document.getElementById('snext').style.display='none';
+  document.getElementById('sfinish').style.display='none';
+  scDone=false;
+  document.getElementById('sbox').innerHTML=`
+    <div class="scen-icon">${sc.icon}</div>
+    <p class="scen-text">${sc.text}</p>
+    <div class="scen-choices">
+      ${sc.choices.map((ch,i)=>`<button class="cho-btn" onclick="chooseScen(${i},this)">${ch.t}</button>`).join('')}
+    </div>
+    <div class="cons-box" id="consbox"></div>`;
+}
+
+function chooseScen(idx,btn){
+  if(scDone)return;scDone=true;
+  const ch=SCENARIOS[scIdx].choices[idx];
+  document.querySelectorAll('.cho-btn').forEach(b=>b.disabled=true);
+  btn.classList.add(ch.good?'cgood':'cbad');
+  Object.entries(ch.fx).forEach(([k,v])=>{
+    cstats[k]=Math.max(0,Math.min(5,cstats[k]+v));updBar(k);
+  });
+  if(ch.good){s4+=60;score+=60;updSc();}
+  const cb=document.getElementById('consbox');cb.textContent=ch.cons;cb.classList.add('show');
+  if(scIdx<4)document.getElementById('snext').style.display='block';
+  else document.getElementById('sfinish').style.display='block';
+}
+
+function nextScen(){scIdx++;renderScen();}
+
+function updBar(stat){
+  const ids={saber:'bar-saber',conv:'bar-conv',rep:'bar-rep'};
+  const bar=document.getElementById(ids[stat]);
+  if(!bar)return;
+  bar.querySelectorAll('.cseg').forEach((s,i)=>s.classList.toggle('on',i<cstats[stat]));
+}
+
+// ── FINAL ─────────────────────────────────────────────────────────────────────
+function finishGame(){
+  document.getElementById('fscore').textContent=score;
+  document.getElementById('cname').textContent=pname;
+  document.getElementById('b1').textContent=s1;
+  document.getElementById('b2').textContent=s2;
+  document.getElementById('b3').textContent=s3;
+  document.getElementById('b4').textContent=s4;
+  let trophy,title,rank,rnkStyle;
+  if(score>=700){
+    trophy='🏛️';title='¡Eres digno de la Biblioteca!';
+    rank='GRAN ERUDITO DE AL-ÁNDALUS';rnkStyle='background:linear-gradient(135deg,var(--terracota),var(--terra2));color:var(--gold3);border:2px solid var(--terra2);';
+    launchConfetti();
+  }else if(score>=450){
+    trophy='📚';title='¡Bienvenido, buen viajero!';
+    rank='ESTUDIANTE DE LA MADRASA';rnkStyle='background:var(--turq);color:var(--turq3);border:2px solid var(--turq2);';
+  }else if(score>=250){
+    trophy='🗺️';title='Sigue explorando, viajero';
+    rank='MERCADER DEL ZOCO';rnkStyle='background:var(--emerald);color:var(--em3);border:2px solid var(--em2);';
+  }else{
+    trophy='🐪';title='Acabas de llegar a Córdoba';
+    rank='VIAJERO RECIÉN LLEGADO';rnkStyle='background:var(--sand3);color:var(--parch2);border:1px solid var(--terracota);';
+  }
+  document.getElementById('ftrophy').textContent=trophy;
+  document.getElementById('ftitle').textContent=title;
+  document.getElementById('fstars').textContent=score>=700?'⭐⭐⭐':score>=400?'⭐⭐':'⭐';
+  const rnk=document.getElementById('rnk');rnk.textContent=rank;rnk.style.cssText=rnkStyle;
+  showS('s-final');
+}
+
+function launchConfetti(){
+  const cols=['#c8960a','#0f6060','#8b3a00','#e8b820','#20c0a0'];
+  for(let i=0;i<55;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');p.className='confetti-p';
+      p.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${cols[Math.floor(Math.random()*5)]};transform:rotate(${Math.random()*360}deg);animation-delay:${Math.random()*.7}s;`;
+      document.body.appendChild(p);setTimeout(()=>p.remove(),2500);
+    },i*22);
+  }
+}
+
+function restartGame(){
+  score=0;s1=0;s2=0;s3=0;s4=0;selLeft=null;selectedWordChip=null;
+  matched1=0;matched2=0;qAnswered=0;scIdx=0;scDone=false;
+  cstats={saber:3,conv:3,rep:3};
+  ['saber','conv','rep'].forEach(k=>updBar(k));
+  document.querySelectorAll('.med-item').forEach(e=>e.classList.remove('mok','mko','sel'));
+  document.getElementById('ms1').textContent='Emparejados: 0 / 6';
+  document.getElementById('fb1').className='fb';document.getElementById('np1').style.display='none';
+  document.querySelectorAll('.word-chip').forEach(e=>e.classList.remove('used','selected'));
+  document.querySelectorAll('.obj-card').forEach((c,i)=>{c.classList.remove('filled');document.getElementById('oa'+i).textContent='';});
+  document.getElementById('fb2').className='fb';document.getElementById('np2').style.display='none';
+  document.getElementById('qcont').innerHTML='';document.getElementById('qprog').textContent='Respondidas: 0 / 6';
+  document.getElementById('fb3').className='fb';document.getElementById('np3').style.display='none';
+  document.getElementById('sbox').innerHTML='';document.getElementById('fb4').className='fb';
+  updSc();showS('s-intro');
+}
+
+function showS(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0);}
+function updSc(){['sc1','sc2','sc3','sc4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=score+' pts';});}
+</script>
+</body>
+</html>
